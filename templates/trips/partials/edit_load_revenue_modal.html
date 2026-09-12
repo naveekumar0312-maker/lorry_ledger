@@ -1,0 +1,242 @@
+<form
+    method="post"
+    action="{% url 'trips:load_revenue_edit' entry.id %}"
+    class="edit-modal-form"
+>
+
+    {% csrf_token %}
+
+    <div class="row g-3">
+
+        <!-- DATE -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Date
+            </label>
+
+            <input
+                type="date"
+                name="date"
+                class="form-control"
+                value="{{ entry.date|date:'Y-m-d' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- FROM -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                From
+            </label>
+
+            <input
+                type="text"
+                name="from_location"
+                class="form-control"
+                value="{{ entry.from_location|default:'' }}"
+                placeholder="From location"
+            >
+
+        </div>
+
+
+        <!-- TO -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                To
+            </label>
+
+            <input
+                type="text"
+                name="to_location"
+                class="form-control"
+                value="{{ entry.to_location|default:'' }}"
+                placeholder="To location"
+            >
+
+        </div>
+
+
+        <!-- LOAD / PLACE -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Load / Place
+            </label>
+
+            <input
+                type="text"
+                name="load_place"
+                class="form-control"
+                value="{{ entry.load_place|default:'' }}"
+                placeholder="Load or place"
+            >
+
+        </div>
+
+
+        <!-- TON -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Ton
+            </label>
+
+            <div class="input-group">
+
+                <input
+                    type="number"
+                    name="ton"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ entry.ton|default:'0.00' }}"
+                >
+
+                <span class="input-group-text">
+                    Ton
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- INCOME -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Income
+            </label>
+
+            <div class="input-group">
+
+                <span class="input-group-text">
+                    ₹
+                </span>
+
+                <input
+                    type="number"
+                    name="income_amount"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ entry.income_amount|default:'0.00' }}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- COMMISSION -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Commission
+            </label>
+
+            <div class="input-group">
+
+                <span class="input-group-text">
+                    ₹
+                </span>
+
+                <input
+                    type="number"
+                    name="commission_amount"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ entry.commission_amount|default:'0.00' }}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- LOADING -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Loading Charges
+            </label>
+
+            <div class="input-group">
+
+                <span class="input-group-text">
+                    ₹
+                </span>
+
+                <input
+                    type="number"
+                    name="loading_charges"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ entry.loading_charges|default:'0.00' }}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- UNLOADING -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Unloading Charges
+            </label>
+
+            <div class="input-group">
+
+                <span class="input-group-text">
+                    ₹
+                </span>
+
+                <input
+                    type="number"
+                    name="unloading_charges"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ entry.unloading_charges|default:'0.00' }}"
+                >
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BUTTONS -->
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+
+        <button
+            type="button"
+            class="btn btn-light border"
+            data-bs-dismiss="modal"
+        >
+            Cancel
+        </button>
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-check2-circle me-1"></i>
+            Save Changes
+        </button>
+
+    </div>
+
+</form>

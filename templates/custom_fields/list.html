@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Custom Ledger Fields - Vehicle Ledger{% endblock %}
+{% block header_title %}Custom Ledger Fields{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Custom Fields</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-sliders text-primary"></i> Custom Ledger Fields Builder</h1>
+        <p class="page-subtitle">Add flexible dynamic ledger fields to record handwritten slips, permits, E-Way bills or weighbridge numbers</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'trips:list' %}" class="btn btn-secondary">
+            <i class="bi bi-signpost-2 me-1"></i> Trips Ledger
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Define Custom Field Form Card -->
+    <div class="col-12 col-lg-5">
+        <div class="app-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-plus-circle text-primary"></i> Define New Field
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Field Label / Name <span class="text-danger">*</span></label>
+                        <input type="text" name="field_name" class="form-control" placeholder="e.g. Weighbridge Slip No, Gate Pass, LR Number" required autofocus>
+                        <div class="form-text">Name that will appear as an input label on Trip entry forms</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Data Format</label>
+                        <select name="field_type" class="form-select">
+                            <option value="TEXT">Text String (Alphanumeric)</option>
+                            <option value="NUMBER">Numeric Integer</option>
+                            <option value="DECIMAL">Decimal Currency / Weight</option>
+                            <option value="DATE">Calendar Date Picker</option>
+                            <option value="BOOLEAN">Yes / No Checkbox</option>
+                        </select>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input type="checkbox" name="is_required" class="form-check-input" id="reqCheck">
+                        <label class="form-check-label text-muted small" for="reqCheck">
+                            Mandatory field during trip entry submission
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary fw-bold w-100">
+                        <i class="bi bi-check-circle me-1"></i> Save Custom Field
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Custom Fields Table Card -->
+    <div class="col-12 col-lg-7">
+        <div class="app-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-list-nested text-primary"></i> Configured Ledger Fields
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Field Name</th>
+                            <th>Data Type</th>
+                            <th>Required?</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cf in custom_fields %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold text-primary-dark">{{ cf.field_name }}</span>
+                            </td>
+                            <td>
+                                <span class="badge-custom badge-secondary">{{ cf.field_type }}</span>
+                            </td>
+                            <td>
+                                {% if cf.is_required %}
+                                <span class="badge-custom badge-danger">Required</span>
+                                {% else %}
+                                <span class="text-muted small">Optional</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cf.is_active %}
+                                <span class="badge-custom badge-active"><span class="badge-indicator"></span> Active</span>
+                                {% else %}
+                                <span class="badge-custom badge-inactive"><span class="badge-indicator"></span> Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'custom_fields:toggle' cf.pk %}"
+                                    class="btn btn-secondary btn-sm"
+                                    title="{% if cf.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                    <i class="bi bi-{% if cf.is_active %}pause-fill text-warning{% else %}play-fill text-success{% endif %} me-1"></i>
+                                    {% if cf.is_active %}Disable{% else %}Enable{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="table-empty-state">
+                                    <div class="empty-icon"><i class="bi bi-sliders"></i></div>
+                                    <h6 class="empty-title">No Custom Fields Configured</h6>
+                                    <p class="empty-desc">Define custom dynamic fields like Gate Pass, E-Way Bill or Permit No. to capture any specific business data.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

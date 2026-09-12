@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{% if driver %}Edit Driver - {{ driver.full_name }}{% else %}Add Driver{% endif %} - Vehicle Ledger{% endblock %}
+{% block header_title %}{% if driver %}Edit Driver Profile{% else %}Register Driver{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'drivers:list' %}">Drivers</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{% if driver %}Edit {{ driver.full_name }}{% else %}New Driver{% endif %}</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-person-badge text-primary"></i> {% if driver %}Edit Driver Profile{% else %}Register New Driver{% endif %}</h1>
+        <p class="page-subtitle">Add contact details, commercial driver license and duty assignment status</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'drivers:list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Drivers
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="app-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-person-vcard"></i> Driver Information Form
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Driver Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="full_name" value="{% if post_data and post_data.full_name %}{{ post_data.full_name }}{% else %}{{ driver.full_name|default:'' }}{% endif %}" class="form-control" placeholder="e.g. Ramesh Kumar" required autofocus>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+                            <input type="text" name="mobile_number" value="{% if post_data and post_data.mobile_number %}{{ post_data.mobile_number }}{% else %}{{ driver.mobile_number|default:'' }}{% endif %}" class="form-control" placeholder="10-digit mobile number" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Driving License Number</label>
+                            <input type="text" name="license_number" value="{{ driver.license_number|default:'' }}" class="form-control" placeholder="e.g. DL-0420110012345">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Operational Status</label>
+                        <select name="status" class="form-select">
+                            <option value="ACTIVE" {% if driver.status == 'ACTIVE' %}selected{% endif %}>Active (Available for Trips)</option>
+                            <option value="INACTIVE" {% if driver.status == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+                            <option value="ON_LEAVE" {% if driver.status == 'ON_LEAVE' %}selected{% endif %}>On Leave / Rest Period</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Permanent Address</label>
+                        <textarea name="address" class="form-control" rows="2" placeholder="Street, town/city, pincode">{{ driver.address|default:'' }}</textarea>
+                    </div>
+
+
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        {% if driver %}
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="bi bi-check-circle me-1"></i> Update Driver
+                        </button>
+                        <a href="{% url 'drivers:detail' driver.pk %}" class="btn btn-secondary">Cancel</a>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="bi bi-save me-1"></i> Save Driver
+                        </button>
+                        <a href="{% url 'drivers:list' %}" class="btn btn-secondary">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

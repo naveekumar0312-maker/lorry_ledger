@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}View {{ doc.get_document_type_display }} - Vehicle {{ doc.vehicle.vehicle_number }} - Vehicle Ledger{% endblock %}
+
+{% block header_title %}Vehicle Document Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h1 class="app-page-title mb-0">
+            <i class="bi bi-file-earmark-text text-primary me-2"></i> {{ doc.get_document_type_display }}
+        </h1>
+        <div>
+            <a href="{% url 'vehicles:document_edit' doc.id %}" class="btn btn-primary">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+            <a href="{% url 'vehicles:document_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row gy-4">
+    <div class="col-12 col-lg-6">
+        <div class="app-card app-card-settings shadow-sm p-4 h-100">
+            <div class="app-card-body">
+                <h5 class="section-title mb-4">Document Details</h5>
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted fw-bold" style="width: 150px;">Vehicle</td>
+                            <td><a href="{% url 'vehicles:detail' doc.vehicle.id %}" class="fw-bold">{{ doc.vehicle.vehicle_number }}</a></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Document Type</td>
+                            <td>{{ doc.get_document_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Document No.</td>
+                            <td>{{ doc.document_number|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Issue Date</td>
+                            <td>{{ doc.issue_date|date:"d M Y"|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Expiry Date</td>
+                            <td>{{ doc.expiry_date|date:"d M Y"|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Status</td>
+                            <td>
+                                {% if doc.status == 'VALID' %}
+                                    <span class="badge bg-success">VALID</span>
+                                {% elif doc.status == 'EXPIRING SOON' %}
+                                    <span class="badge bg-warning">EXPIRING SOON</span>
+                                {% elif doc.status == 'EXPIRED' %}
+                                    <span class="badge bg-danger">EXPIRED</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                                
+                                {% if doc.days_remaining is not None %}
+                                    <span class="ms-2 small text-muted">({{ doc.days_remaining }} days left)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="app-card app-card-settings shadow-sm p-4 h-100">
+            <div class="app-card-body d-flex flex-column">
+                <h5 class="section-title mb-4">Uploaded File</h5>
+                
+                {% if doc.document_file %}
+                    <div class="mb-3 flex-grow-1 d-flex flex-column justify-content-center align-items-center bg-light rounded p-3" style="min-height: 200px;">
+                        {% if doc.document_file.url|lower|slice:"-4:" == ".pdf" %}
+                            <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 4rem;"></i>
+                            <p class="mt-2 text-muted text-center mb-0">PDF Document</p>
+                        {% elif doc.document_file.url|lower|slice:"-4:" == ".jpg" or doc.document_file.url|lower|slice:"-4:" == ".png" or doc.document_file.url|lower|slice:"-5:" == ".jpeg" %}
+                            <img src="{{ doc.document_file.url }}" alt="Document Preview" class="img-fluid rounded shadow-sm" style="max-height: 250px; object-fit: contain;">
+                        {% else %}
+                            <i class="bi bi-file-earmark-check text-primary" style="font-size: 4rem;"></i>
+                            <p class="mt-2 text-muted text-center mb-0">Uploaded File</p>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2 justify-content-center mt-auto">
+                        <a href="{{ doc.document_file.url }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> View Full Size
+                        </a>
+                        <a href="{{ doc.document_file.url }}" download class="btn btn-primary">
+                            <i class="bi bi-download me-1"></i> Download
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted p-5 bg-light rounded flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                        <i class="bi bi-file-earmark-x" style="font-size: 3rem;"></i>
+                        <p class="mt-3 mb-0">No document file uploaded.</p>
+                        <a href="{% url 'vehicles:document_edit' doc.id %}" class="btn btn-sm btn-outline-primary mt-3">
+                            Upload File
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

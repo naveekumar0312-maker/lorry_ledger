@@ -1,0 +1,37 @@
+@media (max-width: 991.98px) {
+    .table-ledger {
+        min-width: 1000px !important;
+    }
+    .table-documents {
+        min-width: 650px !important;
+    }
+    .table-detail-generic {
+        min-width: 450px !important;
+    }
+}
+
+.table-custom th:first-child,
+.table-custom td:first-child,
+.table-custom th:nth-child(2),
+.table-custom td:nth-child(2),
+.table-documents th:nth-child(4),
+.table-documents td:nth-child(4) {
+    min-width: 150px !important;
+    white-space: nowrap !important;
+}
+
+/* Specific Dedicated Date Column */
+.table-custom .ledger-date-column,
+.table-custom .ledger-date-column div {
+    min-width: 150px !important;
+    width: 150px !important;
+    white-space: nowrap !important;
+}
+.table-custom th:first-child div,
+.table-custom td:first-child div,
+.table-custom th:nth-child(2) div,
+.table-custom td:nth-child(2) div,
+.table-documents th:nth-child(4) div,
+.table-documents td:nth-child(4) div {
+    white-space: nowrap !important;
+}

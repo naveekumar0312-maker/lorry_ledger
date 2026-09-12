@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Income Management - Vehicle Ledger{% endblock %}
+{% block header_title %}Freight & Income Ledger{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Income Ledger</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-graph-up-arrow text-primary"></i> Income & Freight Revenue</h1>
+        <p class="page-subtitle">Track freight invoices, customer advances, detention/waiting charges and outstanding balances</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'income:add' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg"></i>
+            <span>Add Income Entry</span>
+        </a>
+        <a href="{% url 'ledger:index' %}" class="btn btn-secondary">
+            <i class="bi bi-journal-text me-1"></i> View Ledger
+        </a>
+    </div>
+</div>
+
+<!-- 4 Staffu KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Gross Revenue / Income</div>
+                    <div class="kpi-value text-primary">₹{{ total_income|floatformat:2|default:"0.00" }}</div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">All Invoiced Freight & Extras</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-primary">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Total Freight Charges</div>
+                    <div class="kpi-value">₹{{ total_freight|floatformat:2|default:"0.00" }}</div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">Standard Transport Freight</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-info">
+                    <i class="bi bi-truck"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Total Advance Collected</div>
+                    <div class="kpi-value text-success">₹{{ total_advance|floatformat:2|default:"0.00" }}</div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">Received at Trip Booking</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-success">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Outstanding Balance</div>
+                    <div class="kpi-value text-warning">₹{{ total_balance|floatformat:2|default:"0.00" }}</div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">Pending Settlement</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-warning">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Toolbar -->
+<div class="filter-toolbar mb-4">
+    <form method="get" class="filter-form">
+        <div class="filter-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search ref, vehicle, location, description...">
+        </div>
+        <div class="filter-item" style="max-width: 140px;">
+            <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm" title="From Date">
+        </div>
+        <div class="filter-item" style="max-width: 140px;">
+            <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm" title="To Date">
+        </div>
+        <div class="filter-item">
+            <select name="vehicle_id" class="form-select form-select-sm">
+                <option value="">All Vehicles</option>
+                {% for v in vehicles %}
+                <option value="{{ v.id }}" {% if vehicle_id == v.id|stringformat:"s" %}selected{% endif %}>{{ v.vehicle_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+            {% if q or date_from or date_to or vehicle_id %}
+            <a href="{% url 'income:list' %}" class="btn btn-secondary btn-sm">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Income Type Tabs -->
+<ul class="nav-tabs-custom">
+    <li class="nav-item">
+        <a href="?{% if q %}q={{ q }}&{% endif %}type=" class="nav-link {% if not request.GET.type %}active{% endif %}">
+            <i class="bi bi-collection"></i> All Types
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="?{% if q %}q={{ q }}&{% endif %}type=Freight" class="nav-link {% if request.GET.type == 'Freight' %}active{% endif %}">
+            <i class="bi bi-truck"></i> Freight
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="?{% if q %}q={{ q }}&{% endif %}type=Trip Income" class="nav-link {% if request.GET.type == 'Trip Income' %}active{% endif %}">
+            <i class="bi bi-cash"></i> Trip Income
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="?{% if q %}q={{ q }}&{% endif %}type=Other" class="nav-link {% if request.GET.type == 'Other' %}active{% endif %}">
+            <i class="bi bi-plus-slash-minus"></i> Other Income
+        </a>
+    </li>
+</ul>
+
+<!-- Income Records Table Card -->
+<div class="app-card mb-4">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="bi bi-table text-primary"></i> Income Entries Ledger ({{ page_obj.paginator.count }})
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Income ID</th>
+                    <th>Trip Ref</th>
+                    <th>Vehicle</th>
+                    <th>Income Type</th>
+                    <th class="text-end">Freight</th>
+                    <th class="text-end">Advance</th>
+                    <th class="text-end">Balance</th>
+                    <th class="text-end">Total Income</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_obj %}
+                <tr>
+                    <td class="small text-muted">{{ item.trip.entry_date|date:"d M Y" }}</td>
+                    <td>
+                        <a href="{% url 'income:detail' item.pk %}" class="fw-bold text-primary text-decoration-none">
+                            INC-{{ item.trip.entry_date|date:"Y" }}-{{ item.pk|stringformat:"03d" }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{% url 'trips:detail' item.trip.pk %}" class="badge-custom badge-secondary text-decoration-none">
+                            {{ item.trip.trip_ref_no }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge-custom badge-primary">{{ item.trip.vehicle.vehicle_number }}</span>
+                    </td>
+                    <td>
+                        {% if item.income_type == 'Freight' %}
+                            <span class="badge-custom badge-freight">Freight</span>
+                        {% elif item.income_type == 'Trip Income' %}
+                            <span class="badge-custom badge-primary">Trip Income</span>
+                        {% else %}
+                            <span class="badge-custom badge-pending">
+                                {{ item.custom_income_name|default:"Other" }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end fw-semibold">₹{{ item.freight_amount|floatformat:2 }}</td>
+                    <td class="text-end text-success fw-semibold">₹{{ item.advance_amount|floatformat:2 }}</td>
+                    <td class="text-end fw-semibold {% if item.balance_amount > 0 %}text-warning{% endif %}">₹{{ item.balance_amount|floatformat:2 }}</td>
+                    <td class="text-end fw-bold text-primary">₹{{ item.total_income|floatformat:2 }}</td>
+                    <td class="text-center">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'income:detail' item.pk %}">
+                                        <i class="bi bi-eye text-primary"></i> View Detail
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'income:edit' item.pk %}">
+                                        <i class="bi bi-pencil text-warning"></i> Edit Entry
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button type="button" class="dropdown-item text-danger"
+                                        data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        data-delete-url="{% url 'income:delete' item.pk %}"
+                                        data-delete-name="Income #INC-{{ item.trip.entry_date|date:'Y' }}-{{ item.pk|stringformat:'03d' }}">
+                                        <i class="bi bi-trash"></i> Delete Entry
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10">
+                        <div class="table-empty-state">
+                            <div class="empty-icon"><i class="bi bi-cash-coin"></i></div>
+                            <h6 class="empty-title">No Income Records Found</h6>
+                            <p class="empty-desc">Manage trip income, freight charges, and customer payments from this ledger module.</p>
+                            <a href="{% url 'income:add' %}" class="btn btn-primary fw-bold">
+                                <i class="bi bi-plus-lg me-1"></i> Add Income Entry
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer">
+        <div class="pagination-wrapper">
+            <span class="pagination-info">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} income records</span>
+            <ul class="pagination-custom">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if vehicle_id %}&vehicle_id={{ vehicle_id }}{% endif %}">Previous</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if vehicle_id %}&vehicle_id={{ vehicle_id }}{% endif %}">Next</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Income Analytics Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-pie-chart-fill text-primary"></i> Income by Type
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 240px;">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-8">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-graph-up-arrow text-primary"></i> Monthly Income Trend
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 240px;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const typeLabels = JSON.parse('{{ type_labels|escapejs|default:"[\"Freight\", \"Trip Income\", \"Other\"]" }}');
+        const typeData = JSON.parse('{{ type_data|escapejs|default:"[1, 1, 1]" }}');
+        
+        const trendLabels = JSON.parse('{{ trend_labels|escapejs|default:"[\"Jan\", \"Feb\", \"Mar\"]" }}');
+        const trendData = JSON.parse('{{ trend_data|escapejs|default:"[1, 2, 3]" }}');
+        
+        // Type Chart (Doughnut)
+        const typeCanvas = document.getElementById('typeChart');
+        if (typeCanvas) {
+            new Chart(typeCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: typeLabels,
+                    datasets: [{
+                        data: typeData,
+                        backgroundColor: ['#6F4E37', '#8B5E3C', '#e17846'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'Nunito', size: 12 } } }
+                    }
+                }
+            });
+        }
+
+        // Trend Chart (Line)
+        const trendCanvas = document.getElementById('trendChart');
+        if (trendCanvas) {
+            new Chart(trendCanvas, {
+                type: 'line',
+                data: {
+                    labels: trendLabels,
+                    datasets: [{
+                        label: 'Total Revenue (₹)',
+                        data: trendData,
+                        borderColor: '#6F4E37',
+                        backgroundColor: 'rgba(111, 78, 55, 0.08)',
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        fill: true,
+                        pointBackgroundColor: '#6F4E37',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(101, 104, 138, 0.1)' },
+                            ticks: { font: { family: 'Nunito', size: 11 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Nunito', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

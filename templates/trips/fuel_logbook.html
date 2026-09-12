@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Fuel Logbook & Purchases - Vehicle Ledger{% endblock %}
+{% block header_title %}Fuel Logbook{% endblock %}
+
+{% block content %}
+
+<!-- =========================================================
+     PAGE HEADER
+========================================================= -->
+
+<div class="page-header">
+
+    <div class="page-header-left">
+
+        <nav aria-label="breadcrumb">
+
+            <ol class="breadcrumb mb-1">
+
+                <li class="breadcrumb-item">
+
+                    <a href="{% url 'dashboard:index' %}">
+                        Home
+                    </a>
+
+                </li>
+
+                <li class="breadcrumb-item active"
+                    aria-current="page">
+
+                    Fuel Logbook
+
+                </li>
+
+            </ol>
+
+        </nav>
+
+
+        <h1 class="page-title">
+
+            <i class="bi bi-fuel-pump text-primary"></i>
+
+            Fuel Logbook & Diesel Purchases
+
+        </h1>
+
+
+        <p class="page-subtitle">
+
+            Centralized record of fuel fills, station purchases,
+            pump rates, and fleet consumption.
+
+        </p>
+
+    </div>
+
+
+    <div class="page-header-right">
+
+        <a
+            href="{% url 'trips:list' %}"
+            class="btn btn-secondary"
+        >
+
+            <i class="bi bi-signpost-2 me-1"></i>
+
+            View Trips
+
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     FUEL LOGBOOK CARD
+========================================================= -->
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <i class="bi bi-journal-check text-primary"></i>
+
+            Fuel Transactions
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Date
+                    </th>
+
+                    <th>
+                        Trip Ref / Vehicle
+                    </th>
+
+                    <th>
+                        Driver
+                    </th>
+
+                    <th>
+                        Fuel Type
+                    </th>
+
+                    <th>
+                        Station Name
+                    </th>
+
+                    <th class="text-end">
+                        Quantity
+                    </th>
+
+                    <th class="text-end">
+                        Rate (₹/L)
+                    </th>
+
+                    <th class="text-end">
+                        Total Cost
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for f in page_obj %}
+
+                <tr>
+
+                    <!-- DATE -->
+
+                    <td class="fw-semibold">
+
+                        {{ f.fuel_date|date:"d M Y" }}
+
+                    </td>
+
+
+                    <!-- TRIP REF / VEHICLE -->
+
+                    <td>
+
+                        <a
+                            href="{% url 'trips:detail' f.trip.pk %}"
+                            class="fw-bold text-primary text-decoration-none"
+                        >
+
+                            {{ f.trip.trip_ref_no }}
+
+                        </a>
+
+
+                        <div>
+
+                            <span class="badge-custom badge-primary mt-1">
+
+                                {{ f.trip.vehicle.vehicle_number }}
+
+                            </span>
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- DRIVER -->
+
+                    <td>
+
+                        <div class="fw-semibold text-secondary">
+
+                            {{ f.trip.primary_driver.full_name|default:"—" }}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- FUEL TYPE -->
+
+                    <td>
+
+                        <span class="badge-custom badge-pending">
+
+                            {{ f.fuel_type }}
+
+                        </span>
+
+                    </td>
+
+
+                    <!-- STATION -->
+
+                    <td>
+
+                        {{ f.station_name|default:"—" }}
+
+                    </td>
+
+
+                    <!-- QUANTITY -->
+
+                    <td class="text-end fw-bold">
+
+                        {{ f.quantity|floatformat:1 }} L
+
+                    </td>
+
+
+                    <!-- RATE -->
+
+                    <td class="text-end text-muted">
+
+                        ₹{{ f.rate|floatformat:2 }}
+
+                    </td>
+
+
+                    <!-- TOTAL COST -->
+
+                    <td class="text-end fw-bold text-danger">
+
+                        ₹{{ f.total_cost|floatformat:2 }}
+
+                    </td>
+
+                </tr>
+
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="8">
+
+                        <div class="table-empty-state">
+
+                            <div class="empty-icon">
+
+                                <i class="bi bi-fuel-pump"></i>
+
+                            </div>
+
+
+                            <h6 class="empty-title">
+
+                                No Fuel Records Logged
+
+                            </h6>
+
+
+                            <p class="empty-desc">
+
+                                Fuel entries are recorded automatically
+                                during trip creation and edits.
+
+                            </p>
+
+
+                            <a
+                                href="{% url 'trips:create' %}"
+                                class="btn btn-primary fw-bold"
+                            >
+
+                                <i class="bi bi-plus-lg me-1"></i>
+
+                                Log New Trip
+
+                            </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         PAGINATION
+    ====================================================== -->
+
+    {% if page_obj.has_other_pages %}
+
+    <div class="card-footer">
+
+        <div class="pagination-wrapper">
+
+
+            <span class="pagination-info">
+
+                Showing
+                {{ page_obj.start_index }}
+                to
+                {{ page_obj.end_index }}
+                of
+                {{ page_obj.paginator.count }}
+                entries
+
+            </span>
+
+
+            <ul class="pagination-custom">
+
+
+                <!-- PREVIOUS -->
+
+                {% if page_obj.has_previous %}
+
+                <li class="page-item">
+
+                    <a
+                        class="page-link"
+                        href="?page={{ page_obj.previous_page_number }}"
+                    >
+
+                        Previous
+
+                    </a>
+
+                </li>
+
+                {% else %}
+
+                <li class="page-item disabled">
+
+                    <span class="page-link">
+
+                        Previous
+
+                    </span>
+
+                </li>
+
+                {% endif %}
+
+
+
+                <!-- PAGE NUMBERS -->
+
+                {% for p in page_obj.paginator.page_range %}
+
+                    {% if p == page_obj.number %}
+
+                    <li class="page-item active">
+
+                        <span class="page-link">
+
+                            {{ p }}
+
+                        </span>
+
+                    </li>
+
+
+                    {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+
+                    <li class="page-item">
+
+                        <a
+                            class="page-link"
+                            href="?page={{ p }}"
+                        >
+
+                            {{ p }}
+
+                        </a>
+
+                    </li>
+
+                    {% endif %}
+
+                {% endfor %}
+
+
+
+                <!-- NEXT -->
+
+                {% if page_obj.has_next %}
+
+                <li class="page-item">
+
+                    <a
+                        class="page-link"
+                        href="?page={{ page_obj.next_page_number }}"
+                    >
+
+                        Next
+
+                    </a>
+
+                </li>
+
+                {% else %}
+
+                <li class="page-item disabled">
+
+                    <span class="page-link">
+
+                        Next
+
+                    </span>
+
+                </li>
+
+                {% endif %}
+
+
+            </ul>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

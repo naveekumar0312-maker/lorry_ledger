@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Fleet Overview{% endblock %}
+{% block header_title %}Executive Dashboard{% endblock %}
+
+{% block content %}
+<!-- Page Header Toolbar -->
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-grid-1x2 text-primary"></i> Fleet Executive Dashboard</h1>
+        <p class="page-subtitle">Real-time trip accounting, fuel consumption and financial performance</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'trips:create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg"></i>
+            <span>New Trip Entry</span>
+        </a>
+        <a href="{% url 'ledger:index' %}" class="btn btn-secondary">
+            <i class="bi bi-journal-text"></i>
+            <span>View Ledger</span>
+        </a>
+        <a href="{% url 'reports:index' %}" class="btn btn-secondary">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports</span>
+        </a>
+    </div>
+</div>
+
+{% if document_alerts %}
+<!-- Vehicle Document Alerts -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="app-card border-left-danger shadow-sm">
+            <div class="card-header bg-white pb-0 border-0">
+                <h5 class="card-title text-danger mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Vehicle Document Alerts
+                </h5>
+                <div class="mt-2 small text-muted">
+                    <span class="badge bg-danger text-white me-2">{{ expired_count }} Expired</span>
+                    <span class="badge bg-warning text-dark me-2">{{ expiring_soon_count }} Expiring Soon</span>
+                    <span class="badge bg-success text-white">{{ valid_count }} Valid</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless mb-0">
+                        <thead class="text-muted small">
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Document</th>
+                                <th>Expiry</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in document_alerts %}
+                            <tr>
+                                <td><a href="{% url 'vehicles:detail' doc.vehicle.id %}" class="fw-bold text-decoration-none">{{ doc.vehicle.vehicle_number }}</a></td>
+                                <td>{{ doc.get_document_type_display }}</td>
+                                <td>{{ doc.expiry_date|date:"d M Y" }}</td>
+                                <td>
+                                    {% if doc.status == 'EXPIRED' %}
+                                        <span class="badge bg-danger">EXPIRED</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">{{ doc.days_remaining }} Days</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 6 Responsive Staffu KPI Cards -->
+<div class="row g-3 mb-4">
+    <!-- Total Trips -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Total Fleet Trips</div>
+                    <div class="kpi-value">{{ total_trips }}</div>
+                    <div class="kpi-subtext">
+                        <span class="badge-custom badge-active"><span class="badge-indicator"></span> Active Fleet</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-primary">
+                    <i class="bi bi-truck"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Income -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Gross Revenue / Income</div>
+                    <div class="kpi-value text-primary">₹{{ total_income|floatformat:2 }}</div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">Total Freight & Extra Income</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-primary">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Expenses -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Total Fleet Expenses</div>
+                    <div class="kpi-value text-danger">₹{{ total_expenses|floatformat:2 }}</div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">Fuel, Tolls, Loading & Taxes</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-danger">
+                    <i class="bi bi-credit-card-2-front"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Profit / Income -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Net Operating Profit</div>
+                    <div class="kpi-value {% if net_income >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ₹{{ net_income|floatformat:2 }}
+                    </div>
+                    <div class="kpi-subtext">
+                        <span class="badge-custom {% if net_income >= 0 %}badge-active{% else %}badge-danger{% endif %}">
+                            <span class="badge-indicator"></span> {% if net_income >= 0 %}Profit Positive{% else %}Net Operating Loss{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box {% if net_income >= 0 %}kpi-success{% else %}kpi-danger{% endif %}">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distance Covered -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Total Distance</div>
+                    <div class="kpi-value">{{ total_km|floatformat:1 }} <span style="font-size:0.9rem;font-weight:600;color:#8B5E3C;">KM</span></div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">Odometer Recorded</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-warning">
+                    <i class="bi bi-speedometer"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Fuel / Average Mileage -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-inner">
+                <div class="kpi-info">
+                    <div class="kpi-label">Fleet Avg Mileage</div>
+                    <div class="kpi-value text-info">{{ avg_mileage }} <span style="font-size:0.9rem;font-weight:600;color:#8B5E3C;">KM/L</span></div>
+                    <div class="kpi-subtext">
+                        <span class="text-muted small">{{ total_fuel_qty|floatformat:1 }} L Diesel (₹{{ total_fuel_cost|floatformat:2 }})</span>
+                    </div>
+                </div>
+                <div class="kpi-icon-box kpi-info">
+                    <i class="bi bi-fuel-pump"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <!-- Financial Overview Chart -->
+    <div class="col-12 col-lg-8">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-bar-chart-line-fill text-primary"></i> Income vs Expense Comparison
+                </div>
+                <div class="card-actions">
+                    <span class="badge-custom badge-primary">Financial Health</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 280px; width: 100%;">
+                    <canvas id="financialChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Breakdown Chart -->
+    <div class="col-12 col-lg-4">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-pie-chart-fill text-primary"></i> Expense Breakdown
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 210px; width: 100%;">
+                    <canvas id="expensePieChart"></canvas>
+                </div>
+                <div id="expenseCategoryData" class="d-none">
+                    {% for cat in expenses_by_cat %}
+                    <span data-name="{{ cat.category__category_name }}" data-total="{{ cat.total|default:'0' }}"></span>
+                    {% endfor %}
+                </div>
+                <div class="mt-3 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted"><i class="bi bi-circle-fill text-warning me-1" style="font-size: 8px;"></i> Fuel & Diesel</span>
+                        <span class="small fw-bold">₹{{ total_fuel_cost|floatformat:2 }}</span>
+                    </div>
+                    {% for cat in expenses_by_cat|slice:":3" %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted"><i class="bi bi-circle-fill text-primary me-1" style="font-size: 8px;"></i> {{ cat.category__category_name }}</span>
+                        <span class="small fw-bold">₹{{ cat.total|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Trips Table -->
+<div class="app-card mb-4">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="bi bi-clock-history text-primary"></i> Recent Trip Records
+        </div>
+        <div class="card-actions">
+            <a href="{% url 'trips:list' %}" class="btn btn-secondary btn-sm">
+                View All Trips <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Date / Ref</th>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Route</th>
+                    <th class="text-end">Total KM</th>
+                    <th class="text-end">Income</th>
+                    <th class="text-end">Expenses</th>
+                    <th class="text-end">Net Profit</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in recent_trips %}
+                <tr>
+                    <td>
+                        <div class="fw-bold text-primary-dark">{{ trip.entry_date|date:"d M Y"|default:trip.created_at|date:"d M Y" }}</div>
+                        <small class="text-muted">{{ trip.trip_ref_no }}</small>
+                    </td>
+                    <td>
+                        <span class="badge-custom badge-primary">{{ trip.vehicle.vehicle_number }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-secondary">{{ trip.primary_driver.full_name|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <span class="text-secondary small">{{ trip.vehicle.owner_name|default:"—" }}</span>
+                    </td>
+                    <td class="text-end fw-bold">{{ trip.total_km }}</td>
+                    <td class="text-end text-primary fw-bold">₹{{ trip.total_income|floatformat:2 }}</td>
+                    <td class="text-end text-danger fw-bold">₹{{ trip.overall_expense|floatformat:2 }}</td>
+                    <td class="text-end">
+                        <span class="badge-custom {% if trip.net_income >= 0 %}badge-active{% else %}badge-danger{% endif %}">
+                            ₹{{ trip.net_income|floatformat:2 }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'trips:detail' trip.pk %}" class="btn btn-secondary btn-sm btn-icon" title="View Trip Details">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">
+                        <div class="table-empty-state">
+                            <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                            <h6 class="empty-title">No Trip Entries Found</h6>
+                            <p class="empty-desc">Create your first vehicle trip record to start tracking income, fuel and ledger balance.</p>
+                            <a href="{% url 'trips:create' %}" class="btn btn-primary fw-bold">
+                                <i class="bi bi-plus-lg me-1"></i> Create First Trip
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Bottom Row: Performance & Recent Expenses -->
+<div class="row g-4">
+    <!-- Top Vehicles Summary -->
+    <div class="col-12 col-lg-4">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-truck text-primary"></i> Top Vehicles (By Trips)
+                </div>
+                <a href="{% url 'vehicles:list' %}" class="btn btn-secondary btn-sm">All Vehicles</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for v in vehicle_summary %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                                <i class="bi bi-truck"></i>
+                            </div>
+                            <div>
+                                <span class="fw-bold text-primary-dark d-block">{{ v.vehicle__vehicle_number }}</span>
+                                <small class="text-muted">Registered Fleet Unit</small>
+                            </div>
+                        </div>
+                        <span class="badge-custom badge-primary">{{ v.total_trips }} Trips</span>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-center text-muted small">No vehicle trips recorded yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Drivers Summary -->
+    <div class="col-12 col-lg-4">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-person-badge text-primary"></i> Driver Performance
+                </div>
+                <a href="{% url 'drivers:list' %}" class="btn btn-secondary btn-sm">All Drivers</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for d in driver_summary %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="driver-avatar-circle">
+                                {{ d.primary_driver__full_name|make_list|first|upper|default:"D" }}
+                            </div>
+                            <div>
+                                <span class="fw-bold text-primary-dark d-block">{{ d.primary_driver__full_name }}</span>
+                                <small class="text-muted">Certified Driver</small>
+                            </div>
+                        </div>
+                        <span class="badge-custom badge-active">{{ d.total_trips }} Completed</span>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-center text-muted small">No driver trip data recorded yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Expenses -->
+    <div class="col-12 col-lg-4">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-receipt-cutoff text-primary"></i> Recent Expenses
+                </div>
+                <a href="{% url 'expenses:category_list' %}" class="btn btn-secondary btn-sm">Categories</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for exp in recent_expenses %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge-custom badge-secondary">{{ exp.category.category_name }}</span>
+                                <span class="small fw-semibold text-muted">{{ exp.trip.trip_ref_no }}</span>
+                            </div>
+                            <small class="text-muted d-block mt-1">{{ exp.expense_date|date:"d M Y" }} &bull; {{ exp.description|default:"No description"|truncatechars:24 }}</small>
+                        </div>
+                        <span class="fw-bold text-danger">₹{{ exp.amount|floatformat:2 }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-center text-muted small">No recent expenses logged.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN for Real Interactive Dashboard Visualizations -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Financial Income vs Expense Bar Chart
+    const finCtx = document.getElementById('financialChart');
+    if (finCtx) {
+        const totalIncome = parseFloat("{{ total_income|default:'0' }}") || 0;
+        const totalExpenses = parseFloat("{{ total_expenses|default:'0' }}") || 0;
+        const netProfit = parseFloat("{{ net_income|default:'0' }}") || 0;
+
+        new Chart(finCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Gross Income', 'Total Expenses', 'Net Profit'],
+                datasets: [{
+                    label: 'Financial Performance (₹)',
+                    data: [totalIncome, totalExpenses, Math.max(0, netProfit)],
+                    backgroundColor: [
+                        '#6F4E37',
+                        '#e25867',
+                        '#8B5E3C'
+                    ],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barThickness: 42
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '₹ ' + context.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(101, 104, 138, 0.1)' },
+                        ticks: {
+                            callback: function(value) { return '₹' + value.toLocaleString('en-IN'); },
+                            font: { family: 'Nunito', size: 12 }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Nunito', weight: 'bold' } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Expense Category Doughnut Chart
+    const pieCtx = document.getElementById('expensePieChart');
+    if (pieCtx) {
+        const fuelCost = parseFloat("{{ total_fuel_cost|default:'0' }}") || 0;
+        const catLabels = ['Fuel & Diesel'];
+        const catData = [fuelCost];
+        const catColors = ['#e17846', '#6F4E37', '#8B5E3C', '#e25867', '#A67C52'];
+
+        document.querySelectorAll('#expenseCategoryData span').forEach(function (el) {
+            catLabels.push(el.dataset.name);
+            catData.push(parseFloat(el.dataset.total) || 0);
+        });
+
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catData,
+                    backgroundColor: catColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ₹ ' + context.parsed.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

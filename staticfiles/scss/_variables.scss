@@ -1,0 +1,103 @@
+// ==============================================================================
+// Vehicle Ledger - SCSS Design Tokens (Staffu SaaS Inspired)
+// ==============================================================================
+
+// --- Primary Brand Colors ---
+$primary: #4666e1;
+$primary-hover: #3852b4;
+$primary-active: #2b4198;
+$primary-subtle: #eef2fa;
+$primary-rgb: 70, 102, 225;
+
+// --- Functional Colors ---
+$secondary: #8990b0;
+$secondary-subtle: #eaedf1;
+$success: #28adbb;
+$success-hover: #1f8a96;
+$success-subtle: #e2f6f8;
+$success-rgb: 40, 173, 187;
+
+$info: #1774ff;
+$info-subtle: #e5f0ff;
+$warning: #e17846;
+$warning-subtle: #fdf0ea;
+$warning-amber: #e1cd3c;
+$danger: #e25867;
+$danger-hover: #c94452;
+$danger-subtle: #fdebed;
+$danger-rgb: 226, 88, 103;
+
+// --- Neutral / Surface Colors ---
+$body-bg: #eaedf1;
+$surface: #ffffff;
+$surface-subtle: #f8f9fd;
+$surface-hover: #f1f4fb;
+$border-color: #e0e3e7;
+$border-color-subtle: #eaedf1;
+
+// --- Typography Colors ---
+$text-primary: #0d2042;
+$text-secondary: #33405d;
+$text-muted: #65688a;
+$text-light: #adb7d8;
+
+// --- Sidebar Theme Colors ---
+$sidebar-bg: #0d2042;
+$sidebar-color: #d1d9e8;
+$sidebar-header-border: #1a2f55;
+$sidebar-link-color: #adb7d8;
+$sidebar-link-hover-bg: rgba(255, 255, 255, 0.08);
+$sidebar-link-hover-color: #ffffff;
+$sidebar-link-active-bg: $primary;
+$sidebar-link-active-color: #ffffff;
+$sidebar-category-color: #65688a;
+
+// --- Topbar / Header ---
+$header-bg: #ffffff;
+$header-height: 64px;
+$header-border: #e0e3e7;
+
+// --- Layout Metrics ---
+$sidebar-width: 260px;
+$sidebar-collapsed-width: 72px;
+
+// --- Typography Tokens ---
+$font-family-primary: 'Poppins', sans-serif;
+$font-family-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+$font$font-size-xs: 0.875rem;    // 12px
+$font$font-size-sm: 0.9375rem;  // 13px
+$font$font-size-base: 1rem; // 14px
+$font-size-md: 0.9375rem;  // 15px
+$font-size-lg: 1rem;       // 16px
+$font-size-xl: 1.125rem;   // 18px
+$font-size-2xl: 1.25rem;   // 20px
+$font-size-3xl: 1.5rem;    // 24px
+$font-size-4xl: 1.75rem;   // 28px
+
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extrabold: 800;
+
+// --- Radii ---
+$border-radius-xs: 0.25rem; // 4px
+$border-radius-sm: 0.375rem; // 6px
+$border-radius-md: 0.5rem;  // 8px
+$border-radius-lg: 0.75rem; // 12px
+$border-radius-xl: 1rem;    // 16px
+$border-radius-pill: 50rem;
+
+// --- Elevation / Shadows ---
+$shadow-xs: 0 1px 2px rgba(13, 32, 66, 0.04);
+$shadow-sm: 0 2px 6px rgba(13, 32, 66, 0.05);
+$shadow-md: 0 4px 14px rgba(13, 32, 66, 0.07);
+$shadow-lg: 0 10px 25px rgba(13, 32, 66, 0.09);
+$shadow-card: 0 1px 3px rgba(13, 32, 66, 0.04), 0 1px 2px rgba(13, 32, 66, 0.02);
+$shadow-card-hover: 0 6px 16px rgba(13, 32, 66, 0.08);
+
+// --- Transitions ---
+$transition-base: all 0.2s ease-in-out;
+$transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);

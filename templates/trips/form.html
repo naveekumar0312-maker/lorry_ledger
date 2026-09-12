@@ -1,0 +1,3790 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if trip %}
+Edit Trip #{{ trip.trip_ref_no }}
+{% else %}
+New Trip Ledger Entry
+{% endif %}
+- Vehicle Accounting System
+{% endblock %}
+
+{% block header_title %}
+{% if trip %}
+Edit Trip Ledger Entry
+{% else %}
+Create New Trip Ledger Entry
+{% endif %}
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    #tripForm {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    #tripForm>.card,
+    #tripForm>.position-sticky {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    #tripForm .table-responsive {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    #tripForm .table-responsive>table {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 767.98px) {
+        #tripForm .card-header {
+            gap: .75rem;
+            flex-wrap: wrap;
+        }
+
+        #tripForm .card-header>.btn {
+            flex-shrink: 0;
+        }
+
+        #tripForm .position-sticky {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    }
+
+    /* =========================================================
+       ACTION BUTTON ALIGNMENT — FINAL
+       Keep every row action button inside one fixed-width cell.
+       Never allow buttons/forms to stack vertically.
+    ========================================================== */
+
+    #tripForm table {
+        width: 100%;
+    }
+
+    #tripForm .action-cell {
+        width: 92px !important;
+        min-width: 92px !important;
+        max-width: 92px !important;
+        padding: 8px !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        white-space: nowrap !important;
+    }
+
+    #tripForm .action-buttons {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
+    }
+
+    #tripForm .action-buttons .btn {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 38px !important;
+        line-height: 1 !important;
+    }
+
+    #tripForm .action-buttons form {
+        display: inline-flex !important;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: 0 0 auto !important;
+    }
+
+    #tripForm .action-buttons i {
+        line-height: 1 !important;
+        margin: 0 !important;
+    }
+
+    /* Keep the final submit bar inside the page width. */
+    #tripForm>.position-sticky {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    @media (max-width: 767.98px) {
+        #tripForm .action-cell {
+            width: 82px !important;
+            min-width: 82px !important;
+            max-width: 82px !important;
+            padding: 6px !important;
+        }
+
+        #tripForm .action-buttons {
+            gap: 4px !important;
+        }
+
+        #tripForm .action-buttons .btn {
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
+            max-width: 34px !important;
+            flex-basis: 34px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<form method="post" id="tripForm" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <!-- =========================================================
+         PAGE HEADER
+    ========================================================== -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-2">
+
+        <div>
+            {% if trip %}
+            <h4 class="fw-bold mb-1">
+                Edit Trip Entry —
+                <span class="text-primary">{{ trip.trip_ref_no }}</span>
+            </h4>
+
+            <p class="text-muted small mb-0">
+                Modify the existing ledger entry. Existing values are loaded automatically.
+            </p>
+            {% else %}
+            <h4 class="fw-bold mb-1">
+                New Vehicle Trip Entry
+            </h4>
+
+            <p class="text-muted small mb-0">
+                Create a new vehicle trip ledger entry.
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            {% if trip %}
+
+            <button type="submit" name="save" value="1" class="btn btn-success fw-semibold">
+                <i class="bi bi-check-circle me-1"></i>
+                Save Changes
+            </button>
+
+            <a href="{% url 'trips:detail' trip.pk %}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+
+            {% else %}
+
+            <button type="submit" name="save" value="1" class="btn btn-primary fw-semibold">
+                <i class="bi bi-save me-1"></i>
+                Save Trip Entry
+            </button>
+
+            <button type="submit" name="save_and_add" value="1" class="btn btn-outline-primary fw-semibold">
+                <i class="bi bi-plus-circle me-1"></i>
+                Save & Add Another
+            </button>
+
+            <a href="{% url 'ledger:index' %}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+
+            {% endif %}
+
+        </div>
+    </div>
+
+
+    <!-- =========================================================
+         LIVE ACCOUNTING SUMMARY
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4 bg-primary bg-gradient text-white rounded-3">
+
+        <div class="card-body p-3">
+
+            <div class="row text-center g-2 align-items-center">
+
+                <div class="col-12 col-sm-6 col-md-3">
+                    <small class="text-white-50 text-uppercase d-block fw-semibold">
+                        Total Distance
+                    </small>
+                    <span class="fs-5 fw-bold" id="live_total_km">
+                        0.00 KM
+                    </span>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-3">
+                    <small class="text-white-50 text-uppercase d-block fw-semibold">
+                        Total Income
+                    </small>
+                    <span class="fs-5 fw-bold" id="live_total_income">
+                        ₹0.00
+                    </span>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-3">
+                    <small class="text-white-50 text-uppercase d-block fw-semibold">
+                        Total Expenses
+                    </small>
+                    <span class="fs-5 fw-bold text-warning" id="live_total_expenses">
+                        ₹0.00
+                    </span>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <div class="bg-white text-dark p-2 rounded-2 shadow-sm text-center">
+
+                        <small class="text-uppercase fw-bold text-muted d-block" style="font-size:0.75rem;">
+                            NET TRIP PROFIT / LOSS
+                        </small>
+
+                        <h4 class="fw-bold mb-0 text-success" id="live_net_income">
+                            ₹0.00
+                        </h4>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         SECTION 1 — BASIC HEADER & ROUTE INFORMATION
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-card-heading me-2"></i>
+                1. Basic Header &amp; Route Information
+            </h6>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Vehicle Owner data for JS auto-fill -->
+            <div id="vehicleOwnerData" class="d-none">
+                {% for v in vehicles %}
+                <span data-vehicle-id="{{ v.id }}" data-owner-name="{{ v.owner_name|default:'' }}"></span>
+                {% endfor %}
+            </div>
+
+            <!-- Hidden KM & helper fields to preserve backend calculations -->
+            <input type="hidden" name="km_adjustment" id="km_adjustment" value="0.00">
+            <input type="hidden" name="km_notes"
+                value="{% if trip and trip.km_detail %}{{ trip.km_detail.km_notes|default:'' }}{% endif %}">
+            <input type="hidden" name="notes" value="{{ trip.notes|default:'' }}">
+
+            <div class="row g-3">
+
+                <!-- ROW 1: Entry Date -->
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Entry Date
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" name="entry_date"
+                        value="{% if trip %}{{ trip.entry_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                        class="form-control form-control-sm" required>
+                </div>
+
+                <!-- ROW 2: Starting KM | Ending KM -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Starting KM
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" step="0.01" name="start_km" id="start_km"
+                        value="{% if trip and trip.km_detail %}{{ trip.km_detail.start_km }}{% endif %}"
+                        class="form-control form-control-sm calc-trigger" placeholder="0.00" required>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Ending KM
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" step="0.01" name="end_km" id="end_km"
+                        value="{% if trip and trip.km_detail %}{{ trip.km_detail.end_km }}{% endif %}"
+                        class="form-control form-control-sm calc-trigger" placeholder="0.00" required>
+                </div>
+
+                <!-- ROW 3: Total KM (Auto) | Mileage (Auto) -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Total KM
+                        <span class="badge bg-secondary ms-1">Auto</span>
+                    </label>
+                    <input type="text" id="computed_total_km"
+                        class="form-control form-control-sm bg-light fw-bold text-primary" readonly
+                        value="{% if trip and trip.km_detail %}{{ trip.km_detail.total_km }} KM{% else %}0.00 KM{% endif %}">
+                </div>
+
+
+
+                <!-- ROW 4: Vehicle Number | Owner Name -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Vehicle Number
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select name="vehicle_id" id="vehicleSelect" class="form-select form-select-sm" required>
+                        <option value="">-- Select Vehicle --</option>
+                        {% for v in vehicles %}
+                        <option value="{{ v.id }}" {% if trip and trip.vehicle_id == v.id %}selected{% endif %}>
+                            {{ v.vehicle_number }}{% if v.vehicle_type %} ({{ v.vehicle_type }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Owner Name
+                    </label>
+                    <input type="text" id="ownerNameDisplay" class="form-control form-control-sm bg-light" readonly
+                        placeholder="Auto-filled from selected vehicle"
+                        value="{% if trip %}{{ trip.vehicle.owner_name|default:'' }}{% endif %}">
+                </div>
+
+                <!-- ROW 5: Primary Driver | Secondary Driver / Cleaner -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold" for="primaryDriverSelect">
+                        Primary Driver
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select name="primary_driver_id" id="primaryDriverSelect"
+                        class="form-select form-select-sm driver-select" required>
+                        <option value="">-- Select Primary Driver --</option>
+                        {% for d in drivers %}
+                        <option value="{{ d.id }}" {% if trip and trip.primary_driver_id == d.id %}selected{% endif %}>
+                            {{ d.full_name }}{% if d.mobile_number %} ({{ d.mobile_number }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div id="driverConflictError" class="invalid-feedback" style="display:none;">
+                        Primary Driver and Secondary Driver cannot be the same.
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold" for="secondaryDriverSelect">
+                        Secondary Driver / Cleaner
+                    </label>
+                    <select name="secondary_driver_id" id="secondaryDriverSelect"
+                        class="form-select form-select-sm driver-select">
+                        <option value="">— None / No Secondary Driver —</option>
+                        {% for d in drivers %}
+                        <option value="{{ d.id }}" {% if trip and trip.secondary_driver_id == d.id %}selected{% endif %}>
+                            {{ d.full_name }}{% if d.mobile_number %} ({{ d.mobile_number }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- ROW 6: Period From | Period To -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Period From
+                    </label>
+                    <input type="date" name="period_from"
+                        value="{% if trip %}{{ trip.period_from|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                        class="form-control form-control-sm">
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">
+                        Period To
+                    </label>
+                    <input type="date" name="period_to"
+                        value="{% if trip %}{{ trip.period_to|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                        class="form-control form-control-sm">
+                </div>
+
+            </div><!-- /.row -->
+
+        </div><!-- /.card-body -->
+
+    </div><!-- /Section 1 -->
+
+
+    <!-- =========================================================
+         SECTION 2 — TRIP / LOAD & REVENUE DETAILS
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-box-seam me-2"></i>
+                2. Trip / Load &amp; Revenue Details
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addLoadRevenueRowBtn">
+                <i class="bi bi-plus-lg"></i>
+                Add Row
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="loadRevenueTable">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="min-width:130px;">Date</th>
+                            <th style="min-width:150px;">From Location</th>
+                            <th style="min-width:150px;">To Location</th>
+                            <th style="min-width:150px;">Load / Place</th>
+                            <th style="width:100px;">Ton</th>
+                            <th style="width:140px;">Income / Amount</th>
+                            <th style="width:120px;">Commission</th>
+                            <th style="width:120px;">Loading</th>
+                            <th style="width:120px;">Unloading</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if trip and trip.load_revenue_entries.exists %}
+                        {% for lr in trip.load_revenue_entries.all %}
+                        <tr>
+                            <td>
+                                <input type="hidden" name="load_entry_id[]" value="{{ lr.id }}">
+
+                                <input type="date" name="load_date[]" value="{{ lr.date|date:'Y-m-d' }}"
+                                    class="form-control form-control-sm">
+                            </td>
+                            <td>
+                                <input type="text" name="from_location[]" value="{{ lr.from_location|default:'' }}"
+                                    class="form-control form-control-sm" placeholder="From location">
+                            </td>
+                            <td>
+                                <input type="text" name="to_location[]" value="{{ lr.to_location|default:'' }}"
+                                    class="form-control form-control-sm" placeholder="To location">
+                            </td>
+                            <td>
+                                <input type="text" name="load_place[]" value="{{ lr.load_place|default:'' }}"
+                                    class="form-control form-control-sm" placeholder="Load description">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_ton[]" value="{{ lr.ton }}"
+                                    class="form-control form-control-sm text-end load-revenue-ton load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_income[]" value="{{ lr.income_amount }}"
+                                    class="form-control form-control-sm text-end load-revenue-income load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_commission[]"
+                                    value="{{ lr.commission_amount }}"
+                                    class="form-control form-control-sm text-end load-revenue-commission load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_loading[]" value="{{ lr.loading_charges }}"
+                                    class="form-control form-control-sm text-end load-revenue-loading load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_unloading[]"
+                                    value="{{ lr.unloading_charges }}"
+                                    class="form-control form-control-sm text-end load-revenue-unloading load-calc-trigger">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <!-- New Empty Row -->
+                        <tr>
+                            <td>
+                                <input type="hidden" name="load_entry_id[]" value="">
+
+                                <input type="date" name="load_date[]" value="{{ today }}"
+                                    class="form-control form-control-sm">
+                            </td>
+                            <td>
+                                <input type="text" name="from_location[]" class="form-control form-control-sm"
+                                    placeholder="From location">
+                            </td>
+                            <td>
+                                <input type="text" name="to_location[]" class="form-control form-control-sm"
+                                    placeholder="To location">
+                            </td>
+                            <td>
+                                <input type="text" name="load_place[]" class="form-control form-control-sm"
+                                    placeholder="Load description">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_ton[]" value="0.00"
+                                    class="form-control form-control-sm text-end load-revenue-ton load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_income[]" value="0.00"
+                                    class="form-control form-control-sm text-end load-revenue-income load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_commission[]" value="0.00"
+                                    class="form-control form-control-sm text-end load-revenue-commission load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_loading[]" value="0.00"
+                                    class="form-control form-control-sm text-end load-revenue-loading load-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="load_unloading[]" value="0.00"
+                                    class="form-control form-control-sm text-end load-revenue-unloading load-calc-trigger">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-row"
+                                        title="Remove Row">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="4" class="text-end">TOTAL</td>
+                            <td class="text-end"><span id="totalLoadTon">0.00</span></td>
+                            <td class="text-end"><span id="totalLoadIncome">₹0.00</span></td>
+                            <td class="text-end"><span id="totalLoadCommission">₹0.00</span></td>
+                            <td class="text-end"><span id="totalLoadLoading">₹0.00</span></td>
+                            <td class="text-end"><span id="totalLoadUnloading">₹0.00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- =========================================================
+         SECTION 3 — FUEL / DIESEL DETAILS
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-fuel-pump me-2"></i>
+                3. Fuel / Diesel Details
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addFuelRowBtn">
+                <i class="bi bi-plus-lg"></i>
+                Add Fuel Entry
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="fuelTable">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="min-width:130px;">Date</th>
+                            <th style="min-width:150px;">Station Name / Place</th>
+                            <th style="min-width:120px;">Fuel Type</th>
+                            <th style="width:100px;">Litres</th>
+                            <th style="width:120px;">Rate / Amount</th>
+                            <th style="width:140px;">Total Amount</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if trip and trip.fuel_entries.exists %}
+                        {% for fuel in trip.fuel_entries.all %}
+                        <tr>
+                            <td>
+                                <input type="hidden" name="fuel_id[]" value="{{ fuel.id }}">
+
+                                <input type="date" name="fuel_date[]" value="{{ fuel.fuel_date|date:'Y-m-d' }}"
+                                    class="form-control form-control-sm">
+                            </td>
+                            <td>
+                                <input type="text" name="fuel_station[]" value="{{ fuel.station_name|default:'' }}"
+                                    class="form-control form-control-sm" placeholder="Station">
+                            </td>
+                            <td>
+                                <select name="fuel_type[]" class="form-select form-select-sm fuel-type-select">
+                                    <option value="Diesel" {% if fuel.fuel_type == 'Diesel' %}selected{% endif %}>Diesel
+                                    </option>
+                                    <option value="AdBlue" {% if fuel.fuel_type == 'AdBlue' %}selected{% endif %}>AdBlue
+                                    </option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="fuel_quantity[]" value="{{ fuel.quantity }}"
+                                    class="form-control form-control-sm text-end fuel-quantity fuel-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="fuel_rate[]" value="{{ fuel.rate }}"
+                                    class="form-control form-control-sm text-end fuel-rate fuel-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="text"
+                                    class="form-control form-control-sm text-end bg-light fw-bold fuel-total"
+                                    value="{{ fuel.total_cost|floatformat:2 }}" readonly tabindex="-1">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <!-- New Empty Row -->
+                        <tr>
+                            <td>
+                                <input type="hidden" name="fuel_id[]" value="">
+
+                                <input type="date" name="fuel_date[]" value="{{ today }}"
+                                    class="form-control form-control-sm">
+                            </td>
+                            <td>
+                                <input type="text" name="fuel_station[]" class="form-control form-control-sm"
+                                    placeholder="Station">
+                            </td>
+                            <td>
+                                <select name="fuel_type[]" class="form-select form-select-sm fuel-type-select">
+                                    <option value="Diesel" selected>Diesel</option>
+                                    <option value="AdBlue">AdBlue</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="fuel_quantity[]" value="0.00"
+                                    class="form-control form-control-sm text-end fuel-quantity fuel-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="fuel_rate[]" value="0.00"
+                                    class="form-control form-control-sm text-end fuel-rate fuel-calc-trigger">
+                            </td>
+                            <td>
+                                <input type="text"
+                                    class="form-control form-control-sm text-end bg-light fw-bold fuel-total"
+                                    value="0.00" readonly tabindex="-1">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="row text-center text-md-start g-3">
+                <div class="col-12 col-md-4">
+                    <span class="d-block small text-muted fw-bold text-uppercase">Total Litres</span>
+                    <span class="fs-5 fw-bold text-dark" id="totalLitres">0.00 L</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="d-block small text-muted fw-bold text-uppercase">Total Amount</span>
+                    <span class="fs-5 fw-bold text-danger" id="totalFuelCost">₹0.00</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="d-block small text-muted fw-bold text-uppercase">Mileage (Diesel)</span>
+                    <span class="fs-5 fw-bold text-primary" id="computed_mileage">0.00 KM/L</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="d-block small text-muted fw-bold text-uppercase">Diesel Cost</span>
+                    <span class="fs-5 fw-bold text-dark" id="dieselCostDisplay">₹0.00</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="d-block small text-muted fw-bold text-uppercase">Total AdBlue</span>
+                    <span class="fs-5 fw-bold text-dark" id="totalAdBlue">0.00 L</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="d-block small text-muted fw-bold text-uppercase">AdBlue Cost</span>
+                    <span class="fs-5 fw-bold text-dark" id="adBlueCostDisplay">₹0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =========================================================
+         SECTION 4 — EXPENSES
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-receipt-cutoff me-2"></i>
+                4. Expenses
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addExpenseBtn">
+                <i class="bi bi-plus-lg"></i>
+                Add Expense
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="expenseTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;" class="text-center">S.No</th>
+                            <th>Expense Name</th>
+                            <th class="text-end">Amount (₹)</th>
+                            <th style="width: 80px;" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseEntriesContainer">
+                        {% if is_edit and trip.expense_entries.exists %}
+                        {% for expense in trip.expense_entries.all %}
+                        <tr class="expense-entry-row">
+                            <td class="text-center align-middle expense-sno">
+                                <input type="hidden" name="expense_id[]" value="{{ expense.id }}">
+                                {{ forloop.counter }}
+                            </td>
+                            <td>
+                                <input type="text" name="expense_name[]" value="{{ expense.expense_name }}"
+                                    class="form-control form-control-sm expense-name" placeholder="Expense name">
+                            </td>
+                            <td>
+                                <input type="number" name="expense_amount[]" value="{{ expense.amount }}"
+                                    class="form-control form-control-sm text-end expense-amount calc-trigger"
+                                    step="0.01" min="0">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-expense-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr class="expense-entry-row">
+                            <td class="text-center align-middle expense-sno">
+                                <input type="hidden" name="expense_id[]" value="">
+                                1
+                            </td>
+                            <td>
+                                <input type="text" name="expense_name[]"
+                                    class="form-control form-control-sm expense-name" placeholder="Expense name">
+                            </td>
+                            <td>
+                                <input type="number" name="expense_amount[]" value="0.00"
+                                    class="form-control form-control-sm text-end expense-amount calc-trigger"
+                                    step="0.01" min="0">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-expense-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold bg-light">
+                            <td colspan="2" class="text-end text-uppercase text-muted">TOTAL EXPENSE</td>
+                            <td class="text-end text-danger fs-5" id="expenseTotal">₹0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <!-- =========================================================
+         SECTION 5 — RTO & PC EXPENSE DETAILS
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-file-earmark-text me-2"></i>
+                5. RTO &amp; PC Expense Details
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addRtoPcRowBtn">
+                <i class="bi bi-plus-lg"></i>
+                Add Row
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="rtoPcTable">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="min-width:160px;">Place</th>
+                            <th style="width:120px;">Type</th>
+                            <th style="width:140px;">Onward (₹)</th>
+                            <th style="width:140px;">Return (₹)</th>
+                            <th style="width:140px;">Total (₹)</th>
+                            <th style="width:60px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if trip and trip.rto_pc_entries.exists %}
+                        {% for item in trip.rto_pc_entries.all %}
+                        <tr class="rto-pc-row">
+                            <td>
+                                <input type="hidden" name="rto_pc_id[]" value="{{ item.id }}">
+                                <input type="text" name="rto_pc_place[]" value="{{ item.place|default:'' }}"
+                                    class="form-control form-control-sm rto-pc-place" placeholder="Place">
+                            </td>
+                            <td>
+                                <select name="rto_pc_type[]" class="form-select form-select-sm rto-pc-type">
+                                    <option value="RTO" {% if item.expense_type == 'RTO' %}selected{% endif %}>RTO
+                                    </option>
+                                    <option value="PC" {% if item.expense_type == 'PC' %}selected{% endif %}>PC</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" min="0" name="rto_pc_onward[]"
+                                    value="{{ item.onward_amount|default:'0.00' }}"
+                                    class="form-control form-control-sm text-end rto-pc-onward calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" min="0" name="rto_pc_return[]"
+                                    value="{{ item.return_amount|default:'0.00' }}"
+                                    class="form-control form-control-sm text-end rto-pc-return calc-trigger">
+                            </td>
+                            <td>
+                                <input type="text"
+                                    class="form-control form-control-sm text-end bg-light fw-bold rto-pc-total"
+                                    value="{{ item.total_amount|default:'0.00' }}" readonly tabindex="-1">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr class="rto-pc-row">
+                            <td>
+                                <input type="hidden" name="rto_pc_id[]" value="">
+                                <input type="text" name="rto_pc_place[]"
+                                    class="form-control form-control-sm rto-pc-place" placeholder="Place">
+                            </td>
+                            <td>
+                                <select name="rto_pc_type[]" class="form-select form-select-sm rto-pc-type">
+                                    <option value="RTO" selected>RTO</option>
+                                    <option value="PC">PC</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" min="0" name="rto_pc_onward[]" value="0.00"
+                                    class="form-control form-control-sm text-end rto-pc-onward calc-trigger">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" min="0" name="rto_pc_return[]" value="0.00"
+                                    class="form-control form-control-sm text-end rto-pc-return calc-trigger">
+                            </td>
+                            <td>
+                                <input type="text"
+                                    class="form-control form-control-sm text-end bg-light fw-bold rto-pc-total"
+                                    value="0.00" readonly tabindex="-1">
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons"><button type="button"
+                                        class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button></div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="2" class="text-end">TOTAL</td>
+                            <td class="text-end" id="totalRtoOnward">₹0.00</td>
+                            <td class="text-end" id="totalRtoReturn">₹0.00</td>
+                            <td class="text-end text-danger" id="totalRtoPc">₹0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer bg-light">
+            <div class="row g-3 text-center text-md-start">
+                <div class="col-12 col-md-4">
+                    <span class="small text-muted fw-bold text-uppercase d-block">RTO Total</span>
+                    <span class="fs-5 fw-bold" id="rtoTotal">₹0.00</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="small text-muted fw-bold text-uppercase d-block">PC Total</span>
+                    <span class="fs-5 fw-bold" id="pcTotal">₹0.00</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <span class="small text-muted fw-bold text-uppercase d-block">Combined RTO + PC</span>
+                    <span class="fs-5 fw-bold text-danger" id="rtoPcCombinedTotal">₹0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================
+     SECTION 6
+     DRIVER SALARY & OTHER ACCOUNTING EXPENSES
+============================================================ -->
+
+    <div class="card border-0 shadow-sm mb-4">
+
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-cash-stack me-2"></i>
+                6. Driver Salary &amp; Other Accounting Expenses
+            </h6>
+        </div>
+
+
+        <div class="card-body">
+
+            <!-- ====================================================
+             MAIN ACCOUNTING EXPENSES
+        ===================================================== -->
+
+            <div class="row g-3">
+
+                <!-- DRIVER SALARY -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label small fw-semibold">
+                        Driver Salary
+                    </label>
+
+                    <div class="input-group input-group-sm">
+
+                        <span class="input-group-text">
+                            ₹
+                        </span>
+
+                        <input type="text" id="driverSalaryDisplay" class="form-control bg-light fw-bold" value="0.00"
+                            readonly>
+
+                        <span class="input-group-text">
+                            13%
+                        </span>
+
+                    </div>
+
+                    <small class="text-muted">
+                        Auto-calculated as 13% of Overall Income.
+                    </small>
+
+                </div>
+
+
+                <!-- CLEANER SALARY -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label small fw-semibold" for="cleaner_salary">
+                        Cleaner Salary
+                    </label>
+
+                    <div class="input-group input-group-sm">
+
+                        <span class="input-group-text">
+                            ₹
+                        </span>
+
+                        <input type="number" step="0.01" min="0" name="cleaner_salary" id="cleaner_salary"
+                            value="{% if trip %}{{ trip.cleaner_salary|default:'0.00' }}{% else %}0.00{% endif %}"
+                            class="form-control calc-trigger">
+
+                    </div>
+
+                </div>
+
+
+                <!-- WORKSHOP EXPENSE -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label small fw-semibold" for="workshop_expense">
+                        Workshop Expense
+                    </label>
+
+                    <div class="input-group input-group-sm">
+
+                        <span class="input-group-text">
+                            ₹
+                        </span>
+
+                        <input type="number" step="0.01" min="0" name="workshop_expense" id="workshop_expense"
+                            value="{% if trip %}{{ trip.workshop_expense|default:'0.00' }}{% else %}0.00{% endif %}"
+                            class="form-control calc-trigger">
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOLL GATE EXPENSE -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label small fw-semibold" for="toll_gate_expense">
+                        Toll Gate Expense
+                    </label>
+
+                    <div class="input-group input-group-sm">
+
+                        <span class="input-group-text">
+                            ₹
+                        </span>
+
+                        <input type="number" step="0.01" min="0" name="toll_gate_expense" id="toll_gate_expense"
+                            value="{% if trip %}{{ trip.toll_gate_expense|default:'0.00' }}{% else %}0.00{% endif %}"
+                            class="form-control calc-trigger">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+     OTHER TOLL EXPENSES
+===================================================== -->
+
+            <div class="mt-4 pt-4 border-top">
+
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+
+                    <div>
+                        <h6 class="fw-bold mb-1">
+                            <i class="bi bi-signpost-2 me-1 text-primary"></i>
+                            Other Toll Expenses
+                        </h6>
+
+                        <small class="text-muted">
+                            Add additional toll expenses separately.
+                        </small>
+                    </div>
+
+                    <button type="button" id="addOtherTollBtn" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Add Other Toll
+                    </button>
+
+                </div>
+
+
+                <!-- OTHER TOLL TABLE -->
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered align-middle mb-0" id="otherTollTable">
+
+                        <thead class="table-light small">
+
+                            <tr>
+
+                                <th style="width:80px;" class="text-center">
+                                    S.No
+                                </th>
+
+                                <th>
+                                    Toll Name
+                                </th>
+
+                                <th style="width:180px;" class="text-end">
+                                    Amount
+                                </th>
+
+                                <th style="width:80px;" class="text-center">
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="otherTollContainer">
+
+                            {% if trip %}
+
+                            {% for toll in trip.other_toll_expenses.all %}
+
+                            <tr class="other-toll-row">
+
+                                <!-- S.NO -->
+
+                                <td class="text-center">
+
+                                    <input type="hidden" name="other_toll_id[]" value="{{ toll.id }}">
+
+                                    <span class="other-toll-sno">
+                                        {{ forloop.counter }}
+                                    </span>
+
+                                </td>
+
+
+                                <!-- TOLL NAME -->
+
+                                <td>
+
+                                    <input type="text" name="other_toll_name[]" class="form-control form-control-sm"
+                                        placeholder="Toll Name" value="{{ toll.toll_name|default:'' }}">
+
+                                </td>
+
+
+                                <!-- AMOUNT -->
+
+                                <td>
+
+                                    <div class="input-group input-group-sm">
+
+                                        <span class="input-group-text">
+                                            ₹
+                                        </span>
+
+                                        <input type="number" step="0.01" min="0" name="other_toll_amount[]"
+                                            class="form-control text-end other-toll-amount calc-trigger"
+                                            value="{{ toll.amount|default:'0.00' }}">
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- ACTION -->
+
+                                <td class="action-cell">
+                                    <div class="action-buttons"><button type="button"
+                                            class="btn btn-outline-danger btn-sm remove-other-toll"
+                                            title="Remove Other Toll">
+                                            <i class="bi bi-trash"></i>
+                                        </button></div>
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                            {% endif %}
+
+                        </tbody>
+
+
+                        <!-- TOTAL -->
+
+                        <tfoot class="table-light">
+
+                            <tr>
+
+                                <td colspan="2" class="text-end fw-bold">
+                                    TOTAL
+                                </td>
+
+                                <td class="text-end fw-bold text-danger" id="otherTollTotal">
+                                    ₹0.00
+                                </td>
+
+                                <td></td>
+
+                            </tr>
+
+                        </tfoot>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- =========================================================
+         SECTION 7 — FINAL ACCOUNTING SUMMARY
+    ========================================================== -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-calculator me-2"></i>
+                7. Final Accounting Summary
+            </h6>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <div class="small text-muted fw-bold text-uppercase mb-2">Income</div>
+                        <div class="d-flex justify-content-between">
+                            <span>Overall Income</span>
+                            <strong id="summaryIncome">₹0.00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-8">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <div class="small text-muted fw-bold text-uppercase mb-2">Overall Expense Breakdown</div>
+                        <div class="row g-2 small">
+                            <div class="col-12 col-sm-6 col-lg-4">Diesel: <strong id="summaryDiesel">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">AdBlue: <strong id="summaryAdBlue">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Loading: <strong id="summaryLoading">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Unloading: <strong id="summaryUnloading">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Driver Salary: <strong id="summaryDriverSalary">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Cleaner Salary: <strong id="summaryCleanerSalary">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Workshop: <strong id="summaryWorkshop">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">RTO: <strong id="summaryRto">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">PC: <strong id="summaryPc">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Toll Gate: <strong id="summaryToll">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Other Toll: <strong id="summaryOtherToll">₹0.00</strong></div>
+                            <div class="col-12 col-sm-6 col-lg-4">Section 4 Expenses: <strong id="summarySection4">₹0.00</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="border rounded-3 p-3">
+                        <div class="row g-3 text-center">
+                            <div class="col-12 col-md-4">
+                                <small class="text-muted fw-bold d-block text-uppercase">Overall Income</small>
+                                <span class="fs-4 fw-bold text-success" id="summaryOverallIncome">₹0.00</span>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <small class="text-muted fw-bold d-block text-uppercase">Overall Expense</small>
+                                <span class="fs-4 fw-bold text-danger" id="summaryOverallExpense">₹0.00</span>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <small class="text-muted fw-bold d-block text-uppercase">Balance</small>
+                                <span class="fs-4 fw-bold text-primary" id="summaryBalance">₹0.00</span>
+                            </div>
+                        </div>
+                        <div class="alert alert-info small mt-3 mb-0">
+                            <strong>Note:</strong> Section 4 Expenses are <strong>included</strong>
+                            in Overall Expense. Other Toll Expenses are also <strong>included</strong>.
+                            Commission is <strong>included</strong>
+                            in Overall Expense.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =========================================================
+         FINAL SUBMIT
+    ========================================================== -->
+    <div class="position-sticky bottom-0 bg-white p-3 shadow-lg z-3 d-flex flex-column flex-md-row justify-content-end gap-2 mt-4 border-top"
+        style="margin-left:0;margin-right:0;">
+
+        {% if trip %}
+        <a href="{% url 'trips:detail' trip.pk %}" class="btn btn-outline-secondary btn-lg">
+            Cancel
+        </a>
+
+        <button type="submit" name="save" value="1"
+            class="btn btn-success btn-lg px-4 fw-semibold flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-check-circle me-1"></i>
+            Save Changes
+        </button>
+        {% else %}
+        <a href="{% url 'ledger:index' %}" class="btn btn-outline-secondary btn-lg">
+            Cancel
+        </a>
+
+        <button type="submit" name="save_and_add" value="1"
+            class="btn btn-outline-primary btn-lg px-4 fw-semibold">
+            <i class="bi bi-plus-circle me-1"></i>
+            Save &amp; Add Another
+        </button>
+
+        <button type="submit" name="save" value="1"
+            class="btn btn-primary btn-lg px-4 fw-semibold flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-check-circle me-1"></i>
+            Save Trip Entry
+        </button>
+        {% endif %}
+    </div>
+
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        "use strict";
+
+        /* =========================================================
+           COMMON HELPERS
+        ========================================================== */
+
+        function num(value) {
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatCurrency(value) {
+            return '₹' + num(value).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function setText(id, value) {
+            const el = document.getElementById(id);
+
+            if (el) {
+                el.textContent = value;
+            }
+        }
+
+        function getInputValue(id) {
+            const el = document.getElementById(id);
+
+            return el ? num(el.value) : 0;
+        }
+
+
+        /* =========================================================
+           SECTION 1 — KM
+           
+           Total KM = Ending KM - Starting KM
+        ========================================================== */
+
+        function calculateKM(updateLive = true) {
+
+            const start = getInputValue('start_km');
+            const end = getInputValue('end_km');
+
+            /*
+             * Backend compatibility:
+             * km_adjustment may still exist as hidden field.
+             * UI does not show it.
+             */
+            const adjustment = 0;
+
+            const total =
+                Math.max(
+                    0,
+                    (end - start) + adjustment
+                );
+
+            const totalInput =
+                document.getElementById(
+                    'computed_total_km'
+                );
+
+            if (totalInput) {
+
+                totalInput.value =
+                    total.toFixed(2) + ' KM';
+
+            }
+
+            if (updateLive) {
+
+                setText(
+                    'live_total_km',
+                    total.toFixed(2) + ' KM'
+                );
+
+            }
+
+            return total;
+        }
+
+
+        /* =========================================================
+           SECTION 2 — LOAD / REVENUE
+        ========================================================== */
+
+        function calculateLoadRevenue() {
+
+            let ton = 0;
+            let income = 0;
+            let commission = 0;
+            let loading = 0;
+            let unloading = 0;
+
+            document
+                .querySelectorAll(
+                    '#loadRevenueTable tbody tr'
+                )
+                .forEach(function (row) {
+
+                    ton += num(
+                        row.querySelector(
+                            '.load-revenue-ton'
+                        )?.value
+                    );
+
+                    income += num(
+                        row.querySelector(
+                            '.load-revenue-income'
+                        )?.value
+                    );
+
+                    commission += num(
+                        row.querySelector(
+                            '.load-revenue-commission'
+                        )?.value
+                    );
+
+                    loading += num(
+                        row.querySelector(
+                            '.load-revenue-loading'
+                        )?.value
+                    );
+
+                    unloading += num(
+                        row.querySelector(
+                            '.load-revenue-unloading'
+                        )?.value
+                    );
+
+                });
+
+
+            setText(
+                'totalLoadTon',
+                ton.toFixed(2)
+            );
+
+            setText(
+                'totalLoadIncome',
+                formatCurrency(income)
+            );
+
+            setText(
+                'totalLoadCommission',
+                formatCurrency(commission)
+            );
+
+            setText(
+                'totalLoadLoading',
+                formatCurrency(loading)
+            );
+
+            setText(
+                'totalLoadUnloading',
+                formatCurrency(unloading)
+            );
+
+
+            return {
+                ton,
+                income,
+                commission,
+                loading,
+                unloading
+            };
+        }
+
+
+        /* =========================================================
+           ADD LOAD / REVENUE ROW
+        ========================================================== */
+
+        const addLoadRevenueBtn =
+            document.getElementById(
+                'addLoadRevenueRowBtn'
+            );
+
+        if (addLoadRevenueBtn) {
+
+            addLoadRevenueBtn.addEventListener(
+                'click',
+                function () {
+
+                    const tbody =
+                        document.querySelector(
+                            '#loadRevenueTable tbody'
+                        );
+
+                    if (!tbody) return;
+
+
+                    const today =
+                        '{{ today }}';
+
+
+                    const row =
+                        document.createElement('tr');
+
+
+                    row.innerHTML = `
+
+                    <td>
+
+                        <input
+                            type="hidden"
+                            name="load_entry_id[]"
+                            value=""
+                        >
+
+                        <input
+                            type="date"
+                            name="load_date[]"
+                            value="${today}"
+                            class="form-control form-control-sm"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            name="from_location[]"
+                            class="form-control form-control-sm"
+                            placeholder="From location"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            name="to_location[]"
+                            class="form-control form-control-sm"
+                            placeholder="To location"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            name="load_place[]"
+                            class="form-control form-control-sm"
+                            placeholder="Load / Place"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="load_ton[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end load-revenue-ton load-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="load_income[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end load-revenue-income load-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="load_commission[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end load-revenue-commission load-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="load_loading[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end load-revenue-loading load-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="load_unloading[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end load-revenue-unloading load-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td class="action-cell"><div class="action-buttons"><button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger remove-row"
+                        >
+
+                            <i class="bi bi-trash"></i>
+
+                        </button></div></td>
+
+                `;
+
+
+                    tbody.appendChild(row);
+
+                    bindCalcTriggers();
+
+                    recalculateAll();
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           SECTION 3 — FUEL
+           
+           Diesel:
+           - Mileage calculation
+           - Diesel cost
+    
+           AdBlue:
+           - Separate cost
+           - Does NOT affect mileage
+        ========================================================== */
+
+        function calculateFuel() {
+
+            let totalLitres = 0;
+
+            let dieselLitres = 0;
+            let adBlueLitres = 0;
+
+            let dieselCost = 0;
+            let adBlueCost = 0;
+
+
+            document
+                .querySelectorAll(
+                    '#fuelTable tbody tr'
+                )
+                .forEach(function (row) {
+
+                    const type =
+                        row.querySelector(
+                            '.fuel-type-select'
+                        )?.value || 'Diesel';
+
+
+                    const quantity =
+                        num(
+                            row.querySelector(
+                                '.fuel-quantity'
+                            )?.value
+                        );
+
+
+                    const rate =
+                        num(
+                            row.querySelector(
+                                '.fuel-rate'
+                            )?.value
+                        );
+
+
+                    const total =
+                        quantity * rate;
+
+
+                    const totalInput =
+                        row.querySelector(
+                            '.fuel-total'
+                        );
+
+
+                    if (totalInput) {
+
+                        totalInput.value =
+                            total.toFixed(2);
+
+                    }
+
+
+                    totalLitres += quantity;
+
+
+                    if (type === 'AdBlue') {
+
+                        adBlueLitres += quantity;
+
+                        adBlueCost += total;
+
+                    } else {
+
+                        dieselLitres += quantity;
+
+                        dieselCost += total;
+
+                    }
+
+                });
+
+
+            setText(
+                'totalLitres',
+                totalLitres.toFixed(2) + ' L'
+            );
+
+
+            setText(
+                'totalFuelCost',
+                formatCurrency(
+                    dieselCost + adBlueCost
+                )
+            );
+
+
+            const totalKm =
+                calculateKM(false);
+
+
+            const mileage =
+                dieselLitres > 0
+                    ? totalKm / dieselLitres
+                    : 0;
+
+
+            setText(
+                'computed_mileage',
+                mileage.toFixed(2) + ' KM/L'
+            );
+
+
+            setText(
+                'dieselCostDisplay',
+                formatCurrency(
+                    dieselCost
+                )
+            );
+
+
+            setText(
+                'adBlueCostDisplay',
+                formatCurrency(
+                    adBlueCost
+                )
+            );
+
+
+            setText(
+                'totalAdBlue',
+                adBlueLitres.toFixed(2) + ' L'
+            );
+
+
+            setText(
+                'totalAdBlueCost',
+                formatCurrency(
+                    adBlueCost
+                )
+            );
+
+
+            return {
+                totalLitres,
+                dieselLitres,
+                adBlueLitres,
+                dieselCost,
+                adBlueCost
+            };
+
+        }
+
+
+        /* =========================================================
+           ADD FUEL ROW
+        ========================================================== */
+
+        const addFuelBtn =
+            document.getElementById(
+                'addFuelRowBtn'
+            );
+
+
+        if (addFuelBtn) {
+
+            addFuelBtn.addEventListener(
+                'click',
+                function () {
+
+                    const tbody =
+                        document.querySelector(
+                            '#fuelTable tbody'
+                        );
+
+                    if (!tbody) return;
+
+
+                    const today =
+                        '{{ today }}';
+
+
+                    const row =
+                        document.createElement('tr');
+
+
+                    row.innerHTML = `
+
+                    <td>
+
+                        <input
+                            type="hidden"
+                            name="fuel_id[]"
+                            value=""
+                        >
+
+                        <input
+                            type="date"
+                            name="fuel_date[]"
+                            value="${today}"
+                            class="form-control form-control-sm"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            name="fuel_station[]"
+                            class="form-control form-control-sm"
+                            placeholder="Station"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <select
+                            name="fuel_type[]"
+                            class="form-select form-select-sm fuel-type-select"
+                        >
+
+                            <option
+                                value="Diesel"
+                                selected
+                            >
+                                Diesel
+                            </option>
+
+                            <option
+                                value="AdBlue"
+                            >
+                                AdBlue
+                            </option>
+
+                        </select>
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="fuel_quantity[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end fuel-quantity fuel-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="fuel_rate[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end fuel-rate fuel-calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            class="form-control form-control-sm text-end bg-light fw-bold fuel-total"
+                            value="0.00"
+                            readonly
+                            tabindex="-1"
+                        >
+
+                    </td>
+
+
+                    <td class="action-cell"><div class="action-buttons"><button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger remove-row"
+                        >
+
+                            <i class="bi bi-trash"></i>
+
+                        </button></div></td>
+
+                `;
+
+
+                    tbody.appendChild(row);
+
+                    bindCalcTriggers();
+
+                    recalculateAll();
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           SECTION 4 — OTHER EXPENSES
+        ========================================================== */
+
+        function calculateSection4Expenses() {
+
+            let total = 0;
+
+
+            document
+                .querySelectorAll(
+                    '.expense-amount'
+                )
+                .forEach(function (input) {
+
+                    total += num(input.value);
+
+                });
+
+
+            setText(
+                'expenseTotal',
+                formatCurrency(total)
+            );
+
+
+            setText(
+                'section4Total',
+                formatCurrency(total)
+            );
+
+
+            setText(
+                'totalOtherExpenses',
+                formatCurrency(total)
+            );
+
+
+            return total;
+        }
+
+
+        /* =========================================================
+           ADD SECTION 4 EXPENSE
+        ========================================================== */
+
+        const addExpenseBtn =
+            document.getElementById(
+                'addExpenseBtn'
+            );
+
+
+        if (addExpenseBtn) {
+
+            addExpenseBtn.addEventListener(
+                'click',
+                function () {
+
+                    const tbody =
+                        document.getElementById(
+                            'expenseEntriesContainer'
+                        );
+
+                    if (!tbody) return;
+
+
+                    const row =
+                        document.createElement('tr');
+
+
+                    row.className =
+                        'expense-entry-row';
+
+
+                    row.innerHTML = `
+
+                    <td
+                        class="text-center align-middle expense-sno"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="expense_id[]"
+                            value=""
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            name="expense_name[]"
+                            class="form-control form-control-sm expense-name"
+                            placeholder="Expense name"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="expense_amount[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end expense-amount calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td class="action-cell">
+                            <div class="action-buttons">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger remove-expense-row"
+                                    title="Remove Expense"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                `;
+
+
+                    tbody.appendChild(row);
+
+                    renumberExpenseRows();
+
+                    bindCalcTriggers();
+
+                    recalculateAll();
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           NUMBER SECTION 4 ROWS
+        ========================================================== */
+
+        function renumberExpenseRows() {
+
+            document
+                .querySelectorAll(
+                    '.expense-entry-row'
+                )
+                .forEach(function (row, index) {
+
+                    const sno =
+                        row.querySelector(
+                            '.expense-sno'
+                        );
+
+                    if (!sno) return;
+
+
+                    const hidden =
+                        sno.querySelector(
+                            'input[type="hidden"]'
+                        );
+
+
+                    sno.innerHTML = '';
+
+
+                    if (hidden) {
+
+                        sno.appendChild(
+                            hidden
+                        );
+
+                    }
+
+
+                    sno.appendChild(
+                        document.createTextNode(
+                            index + 1
+                        )
+                    );
+
+                });
+
+        }
+
+
+        /* =========================================================
+           SECTION 5 — RTO / PC
+        ========================================================== */
+
+        function calculateRtoPc() {
+
+            let rto = 0;
+            let pc = 0;
+            let totalOnward = 0;
+            let totalReturn = 0;
+
+
+            document
+                .querySelectorAll(
+                    '#rtoPcTable tbody tr'
+                )
+                .forEach(function (row) {
+
+                    const type =
+                        row.querySelector(
+                            '.rto-pc-type'
+                        )?.value || 'RTO';
+
+
+                    const onward =
+                        num(
+                            row.querySelector(
+                                '.rto-pc-onward'
+                            )?.value
+                        );
+
+
+                    const returnAmount =
+                        num(
+                            row.querySelector(
+                                '.rto-pc-return'
+                            )?.value
+                        );
+
+
+                    const total =
+                        onward + returnAmount;
+
+                    totalOnward += onward;
+                    totalReturn += returnAmount;
+
+
+                    const totalInput =
+                        row.querySelector(
+                            '.rto-pc-total'
+                        );
+
+
+                    if (totalInput) {
+
+                        totalInput.value =
+                            total.toFixed(2);
+
+                    }
+
+
+                    if (type === 'PC') {
+
+                        pc += total;
+
+                    } else {
+
+                        rto += total;
+
+                    }
+
+                });
+
+
+            const combined =
+                rto + pc;
+
+
+            setText(
+                'totalRtoOnward',
+                formatCurrency(totalOnward)
+            );
+
+
+            setText(
+                'totalRtoReturn',
+                formatCurrency(totalReturn)
+            );
+
+
+            setText(
+                'rtoTotal',
+                formatCurrency(rto)
+            );
+
+
+            setText(
+                'pcTotal',
+                formatCurrency(pc)
+            );
+
+
+            setText(
+                'rtoPcCombinedTotal',
+                formatCurrency(combined)
+            );
+
+
+            setText(
+                'totalRtoPc',
+                formatCurrency(combined)
+            );
+
+
+            return {
+                rto,
+                pc,
+                combined
+            };
+
+        }
+
+
+        /* =========================================================
+           ADD RTO / PC ROW
+        ========================================================== */
+
+        const addRtoPcBtn =
+            document.getElementById(
+                'addRtoPcRowBtn'
+            );
+
+
+        if (addRtoPcBtn) {
+
+            addRtoPcBtn.addEventListener(
+                'click',
+                function () {
+
+                    const tbody =
+                        document.querySelector(
+                            '#rtoPcTable tbody'
+                        );
+
+                    if (!tbody) return;
+
+
+                    const row =
+                        document.createElement('tr');
+
+
+                    row.className =
+                        'rto-pc-row';
+
+
+                    row.innerHTML = `
+
+                    <td>
+
+                        <input
+                            type="hidden"
+                            name="rto_pc_id[]"
+                            value=""
+                        >
+
+                        <input
+                            type="text"
+                            name="rto_pc_place[]"
+                            class="form-control form-control-sm rto-pc-place"
+                            placeholder="Place"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <select
+                            name="rto_pc_type[]"
+                            class="form-select form-select-sm rto-pc-type"
+                        >
+
+                            <option
+                                value="RTO"
+                                selected
+                            >
+                                RTO
+                            </option>
+
+                            <option
+                                value="PC"
+                            >
+                                PC
+                            </option>
+
+                        </select>
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="rto_pc_onward[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end rto-pc-onward calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="rto_pc_return[]"
+                            value="0.00"
+                            class="form-control form-control-sm text-end rto-pc-return calc-trigger"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="text"
+                            class="form-control form-control-sm text-end bg-light fw-bold rto-pc-total"
+                            value="0.00"
+                            readonly
+                            tabindex="-1"
+                        >
+
+                    </td>
+
+
+                    <td class="action-cell"><div class="action-buttons"><button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger remove-row"
+                        >
+
+                            <i class="bi bi-trash"></i>
+
+                        </button></div></td>
+
+                `;
+
+
+                    tbody.appendChild(row);
+
+                    bindCalcTriggers();
+
+                    recalculateAll();
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           SECTION 6 — OTHER TOLL EXPENSES
+           
+           ONLY:
+           S.No
+           Toll Name
+           Amount
+           Action
+    
+           NO DATE
+           NO NOTES
+        ========================================================== */
+
+        const otherTollContainer =
+            document.getElementById(
+                'otherTollContainer'
+            );
+
+
+        const addOtherTollBtn =
+            document.getElementById(
+                'addOtherTollBtn'
+            );
+
+
+        const otherTollTotalElement =
+            document.getElementById(
+                'otherTollTotal'
+            );
+
+
+        /* =========================================================
+           GET OTHER TOLL TOTAL
+        ========================================================== */
+
+        function getOtherTollTotal() {
+
+            let total = 0;
+
+
+            if (!otherTollContainer) {
+                return 0;
+            }
+
+
+            otherTollContainer
+                .querySelectorAll(
+                    '.other-toll-amount'
+                )
+                .forEach(function (input) {
+
+                    total += num(
+                        input.value
+                    );
+
+                });
+
+
+            return total;
+        }
+
+
+        /* =========================================================
+           UPDATE OTHER TOLL TOTAL
+        ========================================================== */
+
+        function updateOtherTollTotal() {
+
+            const total =
+                getOtherTollTotal();
+
+
+            if (otherTollTotalElement) {
+
+                otherTollTotalElement.textContent =
+                    formatCurrency(total);
+
+            }
+
+
+            setText(
+                'summaryOtherToll',
+                formatCurrency(total)
+            );
+
+
+            return total;
+        }
+
+
+        /* =========================================================
+           RENUMBER OTHER TOLL ROWS
+        ========================================================== */
+
+        function renumberOtherTollRows() {
+
+            if (!otherTollContainer) {
+                return;
+            }
+
+
+            otherTollContainer
+                .querySelectorAll(
+                    '.other-toll-row'
+                )
+                .forEach(function (row, index) {
+
+                    const sno =
+                        row.querySelector(
+                            '.other-toll-sno'
+                        );
+
+
+                    if (sno) {
+
+                        sno.textContent =
+                            index + 1;
+
+                    }
+
+                });
+
+        }
+
+
+        /* =========================================================
+           ADD OTHER TOLL ROW
+           
+           NO DATE
+           NO NOTES
+        ========================================================== */
+
+        function addOtherTollRow() {
+
+            if (!otherTollContainer) {
+                return;
+            }
+
+
+            const row =
+                document.createElement('tr');
+
+
+            row.className =
+                'other-toll-row';
+
+
+            row.innerHTML = `
+
+            <!-- S.NO -->
+
+            <td class="text-center">
+
+                <input
+                    type="hidden"
+                    name="other_toll_id[]"
+                    value=""
+                >
+
+                <span class="other-toll-sno"></span>
+
+            </td>
+
+
+            <!-- TOLL NAME -->
+
+            <td>
+
+                <input
+                    type="text"
+                    name="other_toll_name[]"
+                    class="form-control form-control-sm"
+                    placeholder="Toll Name"
+                >
+
+            </td>
+
+
+            <!-- AMOUNT -->
+
+            <td>
+
+                <div class="input-group input-group-sm">
+
+                    <span class="input-group-text">
+                        ₹
+                    </span>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="other_toll_amount[]"
+                        class="form-control text-end other-toll-amount calc-trigger"
+                        value="0.00"
+                    >
+
+                </div>
+
+            </td>
+
+
+            <!-- ACTION -->
+
+            <td class="action-cell"><div class="action-buttons"><button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm remove-other-toll"
+                    title="Remove Other Toll"
+                >
+
+                    <i class="bi bi-trash"></i>
+
+                </button></div></td>
+
+        `;
+
+
+            otherTollContainer.appendChild(row);
+
+
+            attachOtherTollRowEvents(row);
+
+
+            renumberOtherTollRows();
+
+
+            recalculateAll();
+
+        }
+
+
+        /* =========================================================
+           ADD OTHER TOLL BUTTON
+        ========================================================== */
+
+        if (addOtherTollBtn) {
+
+            addOtherTollBtn.addEventListener(
+                'click',
+                function () {
+
+                    addOtherTollRow();
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           OTHER TOLL ROW EVENTS
+        ========================================================== */
+
+        function attachOtherTollRowEvents(row) {
+
+            if (!row) {
+                return;
+            }
+
+
+            const amountInput =
+                row.querySelector(
+                    '.other-toll-amount'
+                );
+
+
+            const removeButton =
+                row.querySelector(
+                    '.remove-other-toll'
+                );
+
+
+            /* AMOUNT CHANGE */
+
+            if (amountInput) {
+
+                amountInput.addEventListener(
+                    'input',
+                    function () {
+
+                        recalculateAll();
+
+                    }
+                );
+
+                amountInput.addEventListener(
+                    'change',
+                    function () {
+
+                        recalculateAll();
+
+                    }
+                );
+
+            }
+
+
+            /* REMOVE ROW */
+
+            if (removeButton) {
+
+                removeButton.addEventListener(
+                    'click',
+                    function () {
+
+                        row.remove();
+
+                        renumberOtherTollRows();
+
+                        recalculateAll();
+
+                    }
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           INITIALIZE EXISTING OTHER TOLL ROWS
+        ========================================================== */
+
+        if (otherTollContainer) {
+
+            otherTollContainer
+                .querySelectorAll(
+                    '.other-toll-row'
+                )
+                .forEach(function (row) {
+
+                    attachOtherTollRowEvents(
+                        row
+                    );
+
+                });
+
+
+            renumberOtherTollRows();
+
+        }
+
+
+        /* =========================================================
+           GLOBAL OTHER TOLL HELPERS
+        ========================================================== */
+
+        window.getOtherTollTotal =
+            getOtherTollTotal;
+
+
+        window.updateOtherTollTotal =
+            updateOtherTollTotal;
+
+
+        /* =========================================================
+           FINAL ACCOUNTING
+           
+           Overall Income
+           =
+           Load Income
+    
+           Overall Expense
+           =
+           Diesel
+           + AdBlue
+           + Loading
+           + Unloading
+           + Driver Salary 13%
+           + Cleaner Salary
+           + Workshop
+           + RTO
+           + PC
+           + Toll Gate
+           + Other Toll
+           + Section 4 Expenses
+    
+           Commission is NOT included.
+        ========================================================== */
+
+        function recalculateAll() {
+
+            const totalKm =
+                calculateKM(true);
+
+
+            const load =
+                calculateLoadRevenue();
+
+
+            // Driver Salary = 13% of total Section 2 Income
+            updateDriverSalaryDisplay();
+
+
+            const fuel =
+                calculateFuel();
+
+
+            const rtoPc =
+                calculateRtoPc();
+
+
+            const section4Expenses =
+                calculateSection4Expenses();
+
+
+            const otherTollExpense =
+                getOtherTollTotal();
+
+
+            const cleanerSalary =
+                getInputValue(
+                    'cleaner_salary'
+                );
+
+
+            const workshopExpense =
+                getInputValue(
+                    'workshop_expense'
+                );
+
+
+            const tollGateExpense =
+                getInputValue(
+                    'toll_gate_expense'
+                );
+
+
+            /* DRIVER SALARY = 13% */
+
+            const driverSalary =
+                Number((load.income * 0.13).toFixed(2));
+
+
+            /* FINAL OVERALL EXPENSE */
+
+            const overallExpense =
+
+                fuel.dieselCost
+
+                + fuel.adBlueCost
+
+                + load.loading
+
+                + load.unloading
+
+                + driverSalary
+
+                + cleanerSalary
+
+                + workshopExpense
+
+                + rtoPc.rto
+
+                + rtoPc.pc
+
+                + tollGateExpense
+
+                + otherTollExpense
+
+                + section4Expenses;
+
+
+            /* FINAL BALANCE */
+
+            const balance =
+                load.income -
+                overallExpense;
+
+
+            /* =====================================================
+               TOP KPI
+            ====================================================== */
+
+            setText(
+                'live_total_km',
+                totalKm.toFixed(2) + ' KM'
+            );
+
+
+            setText(
+                'live_total_income',
+                formatCurrency(
+                    load.income
+                )
+            );
+
+
+            setText(
+                'live_total_expenses',
+                formatCurrency(
+                    overallExpense
+                )
+            );
+
+
+            setText(
+                'live_net_income',
+                formatCurrency(
+                    balance
+                )
+            );
+
+
+            /* =====================================================
+               DRIVER SALARY
+            ====================================================== */
+
+            const driverSalaryDisplay =
+                document.getElementById(
+                    'driverSalaryDisplay'
+                );
+
+            if (driverSalaryDisplay) {
+                driverSalaryDisplay.value =
+                    driverSalary.toFixed(2);
+            }
+
+
+            /* =====================================================
+               SECTION 4
+            ====================================================== */
+
+            setText(
+                'expenseTotal',
+                formatCurrency(
+                    section4Expenses
+                )
+            );
+
+
+            setText(
+                'section4Total',
+                formatCurrency(
+                    section4Expenses
+                )
+            );
+
+
+            setText(
+                'totalOtherExpenses',
+                formatCurrency(
+                    section4Expenses
+                )
+            );
+
+
+            /* =====================================================
+               OTHER TOLL
+            ====================================================== */
+
+            setText(
+                'otherTollTotal',
+                formatCurrency(
+                    otherTollExpense
+                )
+            );
+
+
+            setText(
+                'summaryOtherToll',
+                formatCurrency(
+                    otherTollExpense
+                )
+            );
+
+
+            /* =====================================================
+               FINAL SUMMARY
+            ====================================================== */
+
+            setText(
+                'summaryIncome',
+                formatCurrency(
+                    load.income
+                )
+            );
+
+
+            setText(
+                'summaryOverallIncome',
+                formatCurrency(
+                    load.income
+                )
+            );
+
+
+            setText(
+                'summaryOverallExpense',
+                formatCurrency(
+                    overallExpense
+                )
+            );
+
+
+            setText(
+                'summaryBalance',
+                formatCurrency(
+                    balance
+                )
+            );
+
+
+            /* =====================================================
+               EXPENSE BREAKDOWN
+            ====================================================== */
+
+            setText(
+                'summaryDiesel',
+                formatCurrency(
+                    fuel.dieselCost
+                )
+            );
+
+
+            setText(
+                'summaryAdBlue',
+                formatCurrency(
+                    fuel.adBlueCost
+                )
+            );
+
+
+            setText(
+                'summaryLoading',
+                formatCurrency(
+                    load.loading
+                )
+            );
+
+
+            setText(
+                'summaryUnloading',
+                formatCurrency(
+                    load.unloading
+                )
+            );
+
+
+            setText(
+                'summaryDriverSalary',
+                formatCurrency(
+                    driverSalary
+                )
+            );
+
+
+            setText(
+                'summaryCleanerSalary',
+                formatCurrency(
+                    cleanerSalary
+                )
+            );
+
+
+            setText(
+                'summaryWorkshop',
+                formatCurrency(
+                    workshopExpense
+                )
+            );
+
+
+            setText(
+                'summaryRto',
+                formatCurrency(
+                    rtoPc.rto
+                )
+            );
+
+
+            setText(
+                'summaryPc',
+                formatCurrency(
+                    rtoPc.pc
+                )
+            );
+
+
+            setText(
+                'summaryToll',
+                formatCurrency(
+                    tollGateExpense
+                )
+            );
+
+
+            setText(
+                'summaryOtherToll',
+                formatCurrency(
+                    otherTollExpense
+                )
+            );
+
+
+            setText(
+                'summarySection4',
+                formatCurrency(
+                    section4Expenses
+                )
+            );
+
+
+            /* =====================================================
+               NET COLOR
+            ====================================================== */
+
+            const liveNet =
+                document.getElementById(
+                    'live_net_income'
+                );
+
+
+            if (liveNet) {
+
+                liveNet.className =
+                    'fw-bold mb-0 ' +
+                    (
+                        balance >= 0
+                            ? 'text-success'
+                            : 'text-danger'
+                    );
+
+            }
+
+
+            /* OPTIONAL */
+
+            setText(
+                'overallExpenseDisplay',
+                formatCurrency(
+                    overallExpense
+                )
+            );
+
+
+            setText(
+                'finalBalanceDisplay',
+                formatCurrency(
+                    balance
+                )
+            );
+
+
+            return {
+
+                totalKm,
+
+                income:
+                    load.income,
+
+                commission:
+                    load.commission,
+
+                dieselCost:
+                    fuel.dieselCost,
+
+                adBlueCost:
+                    fuel.adBlueCost,
+
+                loading:
+                    load.loading,
+
+                unloading:
+                    load.unloading,
+
+                driverSalary,
+
+                cleanerSalary,
+
+                workshopExpense,
+
+                rto:
+                    rtoPc.rto,
+
+                pc:
+                    rtoPc.pc,
+
+                tollGateExpense,
+
+                otherTollExpense,
+
+                section4Expenses,
+
+                overallExpense,
+
+                balance
+
+            };
+
+        }
+
+
+        /* =========================================================
+           DRIVER SALARY — LIVE 13% OF SECTION 2 INCOME
+        ========================================================== */
+
+        function updateDriverSalaryDisplay() {
+
+            let income = 0;
+
+            document
+                .querySelectorAll(
+                    '#loadRevenueTable tbody .load-revenue-income'
+                )
+                .forEach(function (input) {
+                    income += num(input.value);
+                });
+
+            const salary = Number(
+                (income * 0.13).toFixed(2)
+            );
+
+            const salaryInput =
+                document.getElementById(
+                    'driverSalaryDisplay'
+                );
+
+            if (salaryInput) {
+                salaryInput.value =
+                    salary.toFixed(2);
+            }
+
+            return salary;
+        }
+
+
+        /* =========================================================
+           GLOBAL FINAL CALCULATION
+        ========================================================== */
+
+        window.calculateFinalAccounting =
+            recalculateAll;
+
+
+        window.recalculateAll =
+            recalculateAll;
+
+
+        /* =========================================================
+           CALCULATION EVENT BINDING
+        ========================================================== */
+
+        function bindCalcTriggers() {
+
+            document
+                .querySelectorAll(
+                    '.calc-trigger, ' +
+                    '.load-calc-trigger, ' +
+                    '.fuel-calc-trigger, ' +
+                    '.fuel-type-select, ' +
+                    '.rto-pc-type, ' +
+                    '.other-toll-amount'
+                )
+                .forEach(function (element) {
+
+                    element.removeEventListener(
+                        'input',
+                        recalculateAll
+                    );
+
+
+                    element.removeEventListener(
+                        'change',
+                        recalculateAll
+                    );
+
+
+                    element.addEventListener(
+                        'input',
+                        recalculateAll
+                    );
+
+
+                    element.addEventListener(
+                        'change',
+                        recalculateAll
+                    );
+
+                });
+
+        }
+
+
+        /* =========================================================
+           SECTION 2 INCOME — DRIVER SALARY LIVE UPDATE
+        ========================================================== */
+
+        document.addEventListener(
+            'input',
+            function (event) {
+
+                if (
+                    event.target.matches(
+                        '#loadRevenueTable .load-revenue-income'
+                    )
+                ) {
+                    updateDriverSalaryDisplay();
+                }
+
+            }
+        );
+
+
+        /* =========================================================
+           REMOVE LOAD / FUEL / RTO-PC ROW
+        ========================================================== */
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                const removeButton =
+                    event.target.closest(
+                        '.remove-row'
+                    );
+
+
+                if (!removeButton) {
+                    return;
+                }
+
+
+                const row =
+                    removeButton.closest('tr');
+
+
+                if (!row) {
+                    return;
+                }
+
+
+                const tbody =
+                    row.parentNode;
+
+
+                /*
+                 * Keep at least one row.
+                 */
+
+                if (
+                    tbody &&
+                    tbody.children.length > 1
+                ) {
+
+                    row.remove();
+
+                } else {
+
+                    row
+                        .querySelectorAll('input')
+                        .forEach(function (input) {
+
+                            if (
+                                input.type ===
+                                'hidden'
+                            ) {
+
+                                input.value = '';
+
+                            } else if (
+                                input.type ===
+                                'number'
+                            ) {
+
+                                input.value =
+                                    '0.00';
+
+                            } else if (
+                                !input.readOnly
+                            ) {
+
+                                input.value = '';
+
+                            }
+
+                        });
+
+
+                    row
+                        .querySelectorAll('select')
+                        .forEach(function (select) {
+
+                            select.selectedIndex =
+                                0;
+
+                        });
+
+
+                    const total =
+                        row.querySelector(
+                            '.fuel-total, .rto-pc-total'
+                        );
+
+
+                    if (total) {
+
+                        total.value =
+                            '0.00';
+
+                    }
+
+                }
+
+
+                recalculateAll();
+
+            }
+        );
+
+
+        /* =========================================================
+           REMOVE SECTION 4 EXPENSE
+        ========================================================== */
+
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                const removeExpenseButton =
+                    event.target.closest(
+                        '.remove-expense-row'
+                    );
+
+
+                if (!removeExpenseButton) {
+                    return;
+                }
+
+
+                const row =
+                    removeExpenseButton.closest(
+                        '.expense-entry-row'
+                    );
+
+
+                if (!row) {
+                    return;
+                }
+
+
+                const tbody =
+                    row.parentNode;
+
+
+                if (
+                    tbody &&
+                    tbody.children.length > 1
+                ) {
+
+                    row.remove();
+
+                } else {
+
+                    row
+                        .querySelectorAll('input')
+                        .forEach(function (input) {
+
+                            input.value = '';
+
+                        });
+
+                }
+
+
+                renumberExpenseRows();
+
+                recalculateAll();
+
+            }
+        );
+
+
+        /* =========================================================
+           DRIVER CONFLICT VALIDATION
+        ========================================================== */
+
+        const form =
+            document.getElementById(
+                'tripForm'
+            );
+
+
+        const primaryDriver =
+            document.getElementById(
+                'primaryDriverSelect'
+            );
+
+
+        const secondaryDriver =
+            document.getElementById(
+                'secondaryDriverSelect'
+            );
+
+
+        const conflictError =
+            document.getElementById(
+                'driverConflictError'
+            );
+
+
+        function checkDriverConflict() {
+
+            if (
+                !primaryDriver ||
+                !secondaryDriver
+            ) {
+
+                return true;
+
+            }
+
+
+            const conflict =
+                primaryDriver.value &&
+                secondaryDriver.value &&
+                primaryDriver.value ===
+                secondaryDriver.value;
+
+
+            primaryDriver.classList.toggle(
+                'is-invalid',
+                !!conflict
+            );
+
+
+            secondaryDriver.classList.toggle(
+                'is-invalid',
+                !!conflict
+            );
+
+
+            if (conflictError) {
+
+                conflictError.style.display =
+                    conflict
+                        ? 'block'
+                        : 'none';
+
+            }
+
+
+            return !conflict;
+
+        }
+
+
+        if (primaryDriver) {
+
+            primaryDriver.addEventListener(
+                'change',
+                checkDriverConflict
+            );
+
+        }
+
+
+        if (secondaryDriver) {
+
+            secondaryDriver.addEventListener(
+                'change',
+                checkDriverConflict
+            );
+
+        }
+
+
+        if (form) {
+
+            form.addEventListener(
+                'submit',
+                function (event) {
+
+                    const driverValid =
+                        checkDriverConflict();
+
+
+                    const formValid =
+                        form.checkValidity();
+
+
+                    if (
+                        !driverValid ||
+                        !formValid
+                    ) {
+
+                        event.preventDefault();
+
+                        event.stopPropagation();
+
+
+                        if (
+                            !driverValid &&
+                            primaryDriver
+                        ) {
+
+                            primaryDriver.focus();
+
+                        }
+
+                    }
+
+
+                    form.classList.add(
+                        'was-validated'
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           VEHICLE OWNER AUTO-FILL
+        ========================================================== */
+
+        const vehicleSelect =
+            document.getElementById(
+                'vehicleSelect'
+            );
+
+
+        const ownerDisplay =
+            document.getElementById(
+                'ownerNameDisplay'
+            );
+
+
+        if (
+            vehicleSelect &&
+            ownerDisplay
+        ) {
+
+            const ownerMap = {};
+
+
+            document
+                .querySelectorAll(
+                    '#vehicleOwnerData span'
+                )
+                .forEach(function (el) {
+
+                    ownerMap[
+                        el.dataset.vehicleId
+                    ] =
+                        el.dataset.ownerName || '';
+
+                });
+
+
+            function updateOwner() {
+
+                ownerDisplay.value =
+                    vehicleSelect.value
+                        ? (
+                            ownerMap[
+                            vehicleSelect.value
+                            ] || ''
+                        )
+                        : '';
+
+            }
+
+
+            vehicleSelect.addEventListener(
+                'change',
+                updateOwner
+            );
+
+
+            updateOwner();
+
+        }
+
+
+        /* =========================================================
+           INITIALIZATION
+        ========================================================== */
+
+        renumberExpenseRows();
+
+        renumberOtherTollRows();
+
+        bindCalcTriggers();
+
+
+        /*
+         * Existing Other Toll rows
+         */
+
+        if (otherTollContainer) {
+
+            otherTollContainer
+                .querySelectorAll(
+                    '.other-toll-row'
+                )
+                .forEach(function (row) {
+
+                    attachOtherTollRowEvents(
+                        row
+                    );
+
+                });
+
+        }
+
+
+        /*
+         * First calculation
+         */
+
+        recalculateAll();
+
+    });
+</script>
+{% endblock %}

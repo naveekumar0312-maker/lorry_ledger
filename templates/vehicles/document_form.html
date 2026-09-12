@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Vehicle Ledger{% endblock %}
+
+{% block header_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 col-md-8 col-lg-6 mx-auto">
+        <div class="app-card app-card-settings shadow-sm p-4">
+            <div class="app-card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Vehicle *</label>
+                        {{ form.vehicle }}
+                        {% if form.vehicle.errors %}
+                            <div class="text-danger small">{{ form.vehicle.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Document Type *</label>
+                        {{ form.document_type }}
+                        {% if form.document_type.errors %}
+                            <div class="text-danger small">{{ form.document_type.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Document Number</label>
+                        {{ form.document_number }}
+                        {% if form.document_number.errors %}
+                            <div class="text-danger small">{{ form.document_number.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Issue Date</label>
+                            {{ form.issue_date }}
+                            {% if form.issue_date.errors %}
+                                <div class="text-danger small">{{ form.issue_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label text-danger">Expiry Date *</label>
+                            {{ form.expiry_date }}
+                            {% if form.expiry_date.errors %}
+                                <div class="text-danger small">{{ form.expiry_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Upload Document (PDF/Image)</label>
+                        {% if doc and doc.document_file %}
+                            <div class="mb-2">
+                                <a href="{{ doc.document_file.url }}" target="_blank" class="badge bg-info text-decoration-none">View Current File</a>
+                            </div>
+                        {% endif %}
+                        {{ form.document_file }}
+                        <div class="form-text">Optional. Max 5MB recommended.</div>
+                        {% if form.document_file.errors %}
+                            <div class="text-danger small">{{ form.document_file.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            Active / Current Document
+                        </label>
+                        <div class="form-text">Uncheck this if you are keeping a historical record.</div>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Document</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if doc %}
+        <div class="mt-4 text-center">
+            <form method="POST" action="{% url 'vehicles:document_delete' doc.id %}" onsubmit="return confirm('Are you sure you want to delete this document?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash me-1"></i> Delete Document
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

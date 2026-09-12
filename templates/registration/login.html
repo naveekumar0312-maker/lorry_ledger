@@ -1,0 +1,50 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Sign In - Vehicle Ledger{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h5 class="fw-bold text-primary-dark mb-1">Welcome Back</h5>
+    <p class="text-muted small mb-0">Enter your credentials to access your fleet ledger</p>
+</div>
+
+<form method="post" action="{% url 'accounts:login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+        <label class="form-label" for="usernameInput">Email or Username</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" name="username" class="form-control" id="usernameInput" placeholder="name@company.com or username" required autofocus>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0" for="passwordInput">Password</label>
+        </div>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" name="password" class="form-control" id="passwordInput" placeholder="••••••••" required>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe">
+            <label class="form-check-label small text-muted" for="rememberMe">
+                Remember this device
+            </label>
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100 py-2 fw-bold mb-3 shadow-sm" type="submit">
+        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Dashboard
+    </button>
+
+    <div class="text-center pt-2 border-top">
+        <span class="text-muted small">Don't have an account?</span>
+        <a href="{% url 'accounts:register' %}" class="fw-bold text-primary text-decoration-none ms-1 small">Create an Account</a>
+    </div>
+</form>
+{% endblock %}

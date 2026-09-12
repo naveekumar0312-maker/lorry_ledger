@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicles Management - Vehicle Ledger{% endblock %}
+{% block header_title %}Vehicle Fleet{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Vehicles</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-truck-flatbed text-primary"></i> Registered Fleet Vehicles</h1>
+        <p class="page-subtitle">Track registration numbers, capacity, owners and operational statuses</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'vehicles:create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg"></i>
+            <span>Add Vehicle</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filter Toolbar -->
+<div class="filter-toolbar">
+    <form method="get" class="filter-form">
+        <div class="filter-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" value="{{ search_query }}" class="form-control form-control-sm" placeholder="Search registration number or owner name...">
+        </div>
+        <div class="filter-item">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+                <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+                <option value="MAINTENANCE" {% if status_filter == 'MAINTENANCE' %}selected{% endif %}>Under Maintenance</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+            {% if search_query or status_filter %}
+            <a href="{% url 'vehicles:list' %}" class="btn btn-secondary btn-sm">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Vehicles Table Card -->
+<div class="app-card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="bi bi-list-check text-primary"></i> Vehicle Inventory ({{ page_obj.paginator.count }})
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Registration No</th>
+                    <th>Type / Model</th>
+                    <th>Capacity</th>
+                    <th>Owner & Contact</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehicle in page_obj %}
+                <tr>
+                    <td>
+                        <span class="badge-custom badge-primary fs-6 px-3 py-1">{{ vehicle.vehicle_number }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-primary-dark">{{ vehicle.vehicle_type }}</div>
+                        {% if vehicle.model %}<small class="text-muted">{{ vehicle.model }}</small>{% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ vehicle.capacity_tons|default:"-" }}</span>
+                        {% if vehicle.capacity_tons %}<small class="text-muted">Tons</small>{% endif %}
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-secondary">{{ vehicle.owner_name }}</div>
+                        <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ vehicle.owner_phone|default:"No phone" }}</small>
+                    </td>
+                    <td>
+                        {% if vehicle.status == 'ACTIVE' %}
+                        <span class="badge-custom badge-active"><span class="badge-indicator"></span> Active</span>
+                        {% elif vehicle.status == 'MAINTENANCE' %}
+                        <span class="badge-custom badge-pending"><span class="badge-indicator"></span> Maintenance</span>
+                        {% else %}
+                        <span class="badge-custom badge-inactive"><span class="badge-indicator"></span> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="{% url 'vehicles:detail' vehicle.pk %}" class="btn btn-secondary btn-sm btn-icon" title="View Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'vehicles:edit' vehicle.pk %}" class="btn btn-secondary btn-sm btn-icon" title="Edit Vehicle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-icon"
+                                title="Delete Vehicle"
+                                data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                data-delete-url="{% url 'vehicles:delete' vehicle.pk %}"
+                                data-delete-name="Vehicle {{ vehicle.vehicle_number }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="table-empty-state">
+                            <div class="empty-icon"><i class="bi bi-truck"></i></div>
+                            <h6 class="empty-title">No Vehicles Found</h6>
+                            <p class="empty-desc">No vehicle records match your search or filter parameters. Register a new fleet vehicle to get started.</p>
+                            <a href="{% url 'vehicles:create' %}" class="btn btn-primary fw-bold">
+                                <i class="bi bi-plus-lg me-1"></i> Add Vehicle
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer">
+        <div class="pagination-wrapper">
+            <span class="pagination-info">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} vehicles</span>
+            <ul class="pagination-custom">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ status_filter }}">Previous</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for p in page_obj.paginator.page_range %}
+                    {% if p == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+                    <li class="page-item"><a class="page-link" href="?page={{ p }}&q={{ search_query }}&status={{ status_filter }}">{{ p }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ status_filter }}">Next</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

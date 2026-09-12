@@ -1,0 +1,64 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Create Account - Vehicle Ledger{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h5 class="fw-bold text-primary-dark mb-1">Create an Account</h5>
+    <p class="text-muted small mb-0">Register to manage fleet trips, fuel & accounting</p>
+</div>
+
+<form method="post" action="{% url 'accounts:register' %}" class="needs-validation" novalidate>
+    {% csrf_token %}
+    
+    <div class="mb-3">
+        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" name="full_name" value="{{ post_data.full_name|default:'' }}" class="form-control" placeholder="e.g. Ramesh Kumar" required autofocus>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email Address <span class="text-danger">*</span></label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+            <input type="email" name="email" value="{{ post_data.email|default:'' }}" class="form-control" placeholder="name@company.com" required>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+            <input type="tel" name="mobile_number" value="{{ post_data.mobile_number|default:'' }}" class="form-control" placeholder="10-digit mobile number" required>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-4">
+        <div class="col-12 col-md-6">
+            <label class="form-label">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                <input type="password" name="password" class="form-control" placeholder="Min 8 chars" required>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label">Confirm <span class="text-danger">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter" required>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100 py-2 fw-bold mb-3 shadow-sm" type="submit">
+        <i class="bi bi-check-circle-fill me-1"></i> Create Account
+    </button>
+
+    <div class="text-center pt-2 border-top">
+        <span class="text-muted small">Already have an account?</span>
+        <a href="{% url 'accounts:login' %}" class="fw-bold text-primary text-decoration-none ms-1 small">Sign In</a>
+    </div>
+</form>
+{% endblock %}

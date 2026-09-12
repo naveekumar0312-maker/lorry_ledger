@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit Income Entry{% else %}Add Income Entry{% endif %} - Vehicle Ledger{% endblock %}
+{% block header_title %}Income Entry{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'income:list' %}">Income</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{% if is_edit %}Edit Entry{% else %}New Entry{% endif %}</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-cash-coin text-primary"></i> {% if is_edit %}Edit Income Entry{% else %}Record Trip Income{% endif %}</h1>
+        <p class="page-subtitle">Record freight revenue, customer advances, balance receivable and detention charges</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'income:list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Income
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="app-card mb-4">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="bi bi-info-circle text-primary"></i> 1. Trip & Income Classification
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Trip Reference <span class="text-danger">*</span></label>
+                            <select name="trip_id" class="form-select form-select-sm" required {% if is_edit %}readonly{% endif %}>
+                                {% if not is_edit %}<option value="">-- Select Active Fleet Trip --</option>{% endif %}
+                                {% for trip in trips %}
+                                <option value="{{ trip.id }}" {% if entry and entry.trip_id == trip.id %}selected{% endif %}>
+                                    {{ trip.trip_ref_no }} — {{ trip.vehicle.vehicle_number }} — {{ trip.entry_date|date:"d M Y" }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Income Type <span class="text-danger">*</span></label>
+                            <select name="income_type" id="id_income_type" class="form-select form-select-sm" required>
+                                <option value="Freight" {% if entry and entry.income_type == 'Freight' %}selected{% endif %}>Freight</option>
+                                <option value="Trip Income" {% if entry and entry.income_type == 'Trip Income' %}selected{% endif %}>Trip Income</option>
+                                <option value="Other" {% if entry and entry.income_type == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 custom-income-wrapper" id="custom-income-wrapper" {% if entry and entry.income_type == 'Other' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                            <label class="form-label">Custom Income Name <span class="text-danger">*</span></label>
+                            <input type="text" name="custom_income_name" id="id_custom_income_name" value="{{ entry.custom_income_name|default:'' }}" class="form-control form-control-sm" placeholder="e.g. Waiting Charge, Halting, Toll Reimbursement">
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="entry_date" value="{{ entry.created_at|date:'Y-m-d'|default:'' }}" class="form-control form-control-sm" {% if is_edit %}readonly{% endif %}>
+                            <div class="form-text">Defaults to trip date if left blank</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Details Card -->
+            <div class="app-card mb-4">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="bi bi-wallet2 text-primary"></i> 2. Financial & Accounting Details
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Freight Amount (₹)</label>
+                            <input type="number" step="0.01" min="0" name="freight_amount" id="id_freight_amount" value="{{ entry.freight_amount|default:'0.00' }}" class="form-control form-control-sm calc-trigger">
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Advance Received (₹)</label>
+                            <input type="number" step="0.01" min="0" name="advance_amount" id="id_advance_amount" value="{{ entry.advance_amount|default:'0.00' }}" class="form-control form-control-sm calc-trigger">
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Balance Receivable (₹) <span class="badge-custom badge-secondary ms-1">Calculated</span></label>
+                            <input type="text" id="id_balance_amount" value="{{ entry.balance_amount|default:'0.00' }}" class="form-control form-control-sm fw-bold text-dark bg-light" readonly tabindex="-1">
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Other / Detention Income (₹)</label>
+                            <input type="number" step="0.01" min="0" name="other_income" id="id_other_income" value="{{ entry.other_income|default:'0.00' }}" class="form-control form-control-sm calc-trigger">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Total Gross Income (₹) <span class="badge-custom badge-active ms-1">Calculated</span></label>
+                            <input type="text" id="id_total_income" value="{{ entry.total_income|default:'0.00' }}" class="form-control form-control-lg fw-extrabold text-primary bg-light" readonly tabindex="-1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Card -->
+            <div class="app-card mb-4">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="bi bi-card-text text-primary"></i> 3. Description
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control form-control-sm" rows="3" placeholder="Add invoice numbers, detention reason...">{{ entry.description|default:'' }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{% url 'income:list' %}" class="btn btn-secondary">Cancel</a>
+                        <div class="d-flex gap-2">
+                            {% if not is_edit %}
+                            <button type="submit" name="save_and_add" class="btn btn-secondary fw-semibold">
+                                <i class="bi bi-plus-circle me-1"></i> Save & Add Another
+                            </button>
+                            {% endif %}
+                            <button type="submit" name="save" class="btn btn-primary fw-bold">
+                                <i class="bi bi-check-circle me-1"></i> {% if is_edit %}Save Changes{% else %}Save Entry{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const freightInput = document.getElementById('id_freight_amount');
+    const advanceInput = document.getElementById('id_advance_amount');
+    const balanceInput = document.getElementById('id_balance_amount');
+    const otherInput = document.getElementById('id_other_income');
+    const totalInput = document.getElementById('id_total_income');
+
+    function calculate() {
+        if (!freightInput) return;
+        const freight = parseFloat(freightInput.value) || 0;
+        const advance = parseFloat(advanceInput.value) || 0;
+        const other = parseFloat(otherInput.value) || 0;
+
+        const balance = freight - advance;
+        const total = freight + other;
+
+        if (balanceInput) balanceInput.value = balance.toFixed(2);
+        if (totalInput) totalInput.value = total.toFixed(2);
+    }
+
+    document.querySelectorAll('.calc-trigger').forEach(function(el) {
+        el.addEventListener('input', calculate);
+    });
+    
+    const incomeTypeSelect = document.getElementById('id_income_type');
+    const customIncomeWrapper = document.getElementById('custom-income-wrapper');
+    const customIncomeInput = document.getElementById('id_custom_income_name');
+    
+    function toggleCustomIncomeName() {
+        if (!incomeTypeSelect || !customIncomeWrapper) return;
+        if (incomeTypeSelect.value === 'Other') {
+            customIncomeWrapper.style.display = 'block';
+            if (customIncomeInput) customIncomeInput.setAttribute('required', 'required');
+        } else {
+            customIncomeWrapper.style.display = 'none';
+            if (customIncomeInput) {
+                customIncomeInput.value = '';
+                customIncomeInput.removeAttribute('required');
+            }
+        }
+    }
+    
+    if (incomeTypeSelect) {
+        incomeTypeSelect.addEventListener('change', toggleCustomIncomeName);
+    }
+    
+    calculate();
+    toggleCustomIncomeName();
+});
+</script>
+{% endblock %}

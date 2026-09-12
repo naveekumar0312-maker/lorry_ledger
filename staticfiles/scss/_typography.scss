@@ -1,0 +1,79 @@
+// ==============================================================================
+// Typography Styles
+// ==============================================================================
+@use "variables" as *;
+
+body {
+  font-family: $font-family-primary;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-family: $font-family-primary;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  line-height: 1.25;
+}
+
+h1, .h1 { font-size: $font-size-3xl; }
+h2, .h2 { font-size: $font-size-2xl; }
+h3, .h3 { font-size: $font-size-xl; }
+h4, .h4 { font-size: $font-size-lg; }
+h5, .h5 { font-size: $font-size-md; font-weight: $font-weight-semibold; }
+h6, .h6 { font-size: $font-size-sm; font-weight: $font-weight-semibold; }
+
+p {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: $text-secondary;
+}
+
+small, .small {
+  font-size: $font-size-xs;
+  color: $text-muted;
+}
+
+.text-primary-dark {
+  color: $text-primary !important;
+}
+
+.text-muted-custom {
+  color: $text-muted !important;
+}
+
+.fw-semibold {
+  font-weight: $font-weight-semibold !important;
+}
+
+.fw-bold {
+  font-weight: $font-weight-bold !important;
+}
+
+.font-monospace {
+  font-family: $font-family-mono !important;
+}
+
+// Financial numbers & Indian Currency display
+.currency-num {
+  font-family: $font-family-primary;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.01em;
+}
+
+.page-title {
+  font-size: 1.25rem;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-subtitle {
+  font-size: $font-size-sm;
+  color: $text-muted;
+  margin-bottom: 0;
+}

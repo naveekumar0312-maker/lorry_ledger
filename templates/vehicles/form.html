@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{% if vehicle %}Edit Vehicle {{ vehicle.vehicle_number }}{% else %}Add New Vehicle{% endif %} - Vehicle Ledger{% endblock %}
+{% block header_title %}{% if vehicle %}Edit Vehicle Record{% else %}Register Vehicle{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'vehicles:list' %}">Vehicles</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{% if vehicle %}Edit {{ vehicle.vehicle_number }}{% else %}New Vehicle{% endif %}</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-truck-flatbed text-primary"></i> {% if vehicle %}Edit Vehicle Details{% else %}Register New Vehicle{% endif %}</h1>
+        <p class="page-subtitle">Configure fleet specifications, tonnage capacity and owner records</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'vehicles:list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Vehicles
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="app-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-file-earmark-text"></i> Vehicle Information & Specifications
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Vehicle Registration Number <span class="text-danger">*</span></label>
+                        <input type="text" name="vehicle_number" value="{% if post_data and post_data.vehicle_number %}{{ post_data.vehicle_number }}{% else %}{{ vehicle.vehicle_number|default:'' }}{% endif %}" class="form-control" placeholder="e.g. TN 66 AY 1092" required autofocus>
+                        <div class="form-text">Official transport registration code with series and number</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Vehicle Type</label>
+                            <input type="text" name="vehicle_type" value="{% if post_data and post_data.vehicle_type %}{{ post_data.vehicle_type }}{% else %}{{ vehicle.vehicle_type|default:'Lorry' }}{% endif %}" class="form-control" placeholder="Lorry, Container, Trailer, Tipper">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Payload Capacity (Tons)</label>
+                            <input type="number" step="0.1" name="capacity_tons" value="{% if post_data and post_data.capacity_tons %}{{ post_data.capacity_tons }}{% else %}{{ vehicle.capacity_tons|default:'' }}{% endif %}" class="form-control" placeholder="e.g. 25.5">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Owner Name</label>
+                            <input type="text" name="owner_name" value="{% if post_data and post_data.owner_name %}{{ post_data.owner_name }}{% else %}{{ vehicle.owner_name|default:'Own Fleet' }}{% endif %}" class="form-control" placeholder="Owner or Company Name">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Owner Contact Phone</label>
+                            <input type="text" name="owner_phone" value="{% if post_data and post_data.owner_phone %}{{ post_data.owner_phone }}{% else %}{{ vehicle.owner_phone|default:'' }}{% endif %}" class="form-control" placeholder="10-digit mobile number">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Operational Status</label>
+                        <select name="status" class="form-select">
+                            <option value="ACTIVE" {% if post_data and post_data.status == 'ACTIVE' or vehicle and vehicle.status == 'ACTIVE' or not vehicle and not post_data %}selected{% endif %}>Active (Available for Trips)</option>
+                            <option value="INACTIVE" {% if post_data and post_data.status == 'INACTIVE' or vehicle and vehicle.status == 'INACTIVE' %}selected{% endif %}>Inactive (Parked / Decommissioned)</option>
+                            <option value="MAINTENANCE" {% if post_data and post_data.status == 'MAINTENANCE' or vehicle and vehicle.status == 'MAINTENANCE' %}selected{% endif %}>Under Maintenance / Garage</option>
+                        </select>
+                    </div>
+
+
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        {% if vehicle %}
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="bi bi-check-circle me-1"></i> Update Vehicle
+                        </button>
+                        <a href="{% url 'vehicles:detail' vehicle.pk %}" class="btn btn-secondary">Cancel</a>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="bi bi-save me-1"></i> Save Vehicle
+                        </button>
+                        <a href="{% url 'vehicles:list' %}" class="btn btn-secondary">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

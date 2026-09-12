@@ -1,0 +1,2664 @@
+{% extends "base.html" %}
+
+{% block title %}Trip Details - {{ trip.trip_ref_no }} - Vehicle Ledger{% endblock %}
+
+{% block header_title %}Trip Ledger Voucher{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .app-sidebar,
+        .app-header,
+        .app-footer,
+        .no-print {
+            display: none !important;
+        }
+
+        .main-wrapper {
+            margin-left: 0 !important;
+        }
+
+        .main-content {
+            padding: 0 !important;
+        }
+
+        .app-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+            break-inside: avoid;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        body {
+            background: #fff !important;
+        }
+    }
+
+    .action-btns {
+        white-space: nowrap;
+    }
+
+    .summary-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #6c757d;
+        font-weight: 700;
+    }
+
+    .summary-value {
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+
+    .accounting-row {
+        border-bottom: 1px solid #D8C7B8;
+        padding: 10px 0;
+    }
+
+    .accounting-row:last-child {
+        border-bottom: 0;
+    }
+
+    .final-balance {
+        border-radius: 14px;
+        padding: 20px;
+    }
+
+    .section-number {
+        min-width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(13, 110, 253, 0.10);
+        color: #6F4E37;
+        font-weight: 800;
+        margin-right: 8px;
+    }
+
+    .expense-total-box {
+        background: #fff5f5;
+        border: 1px solid #ffd8d8;
+        border-radius: 10px;
+    }
+
+    .income-total-box {
+        background: #f1fff6;
+        border: 1px solid #cdeed9;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+
+<div class="page-header no-print">
+
+    <div class="page-header-left">
+
+        <nav aria-label="breadcrumb">
+
+            <ol class="breadcrumb mb-1">
+
+                <li class="breadcrumb-item">
+                    <a href="{% url 'dashboard:index' %}">
+                        Home
+                    </a>
+                </li>
+
+                <li class="breadcrumb-item">
+                    <a href="{% url 'trips:list' %}">
+                        Ledger
+                    </a>
+                </li>
+
+                <li class="breadcrumb-item active">
+                    {{ trip.trip_ref_no }}
+                </li>
+
+            </ol>
+
+        </nav>
+
+
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+
+            <span class="badge-custom badge-primary fs-5 px-3 py-1">
+                {{ trip.trip_ref_no }}
+            </span>
+
+            <h1 class="page-title mb-0">
+                Trip — {{ trip.vehicle.vehicle_number }}
+            </h1>
+
+        </div>
+
+
+        <p class="page-subtitle">
+
+            Recorded on
+            {{ trip.entry_date|date:"d M Y" }}
+
+            by
+
+            {{ trip.created_by.get_full_name|default:trip.created_by.username }}
+
+        </p>
+
+    </div>
+
+
+    <div class="page-header-right d-flex flex-wrap gap-2">
+
+        <button
+            onclick="window.print()"
+            class="btn btn-secondary fw-semibold"
+        >
+            <i class="bi bi-printer me-1"></i>
+            Print Voucher
+        </button>
+
+        <a
+            href="{% url 'trips:trip_voucher_pdf' trip.pk %}"
+            class="btn btn-danger fw-semibold"
+        >
+            <i class="bi bi-file-earmark-pdf me-1"></i>
+            Download PDF
+        </a>
+
+        <a
+            href="{% url 'trips:trip_voucher_word' trip.pk %}"
+            class="btn btn-info fw-semibold text-white"
+        >
+            <i class="bi bi-file-earmark-word me-1"></i>
+            Download Word
+        </a>
+
+
+        <a
+            href="{% url 'trips:edit' trip.pk %}"
+            class="btn btn-primary fw-bold"
+        >
+            <i class="bi bi-pencil-square me-1"></i>
+            Edit Trip
+        </a>
+
+
+        <a
+            href="{% url 'trips:archive' trip.pk %}"
+            class="btn btn-secondary"
+            onclick="return confirm('Toggle archive status for this trip entry?')"
+        >
+            <i class="bi bi-archive me-1"></i>
+
+            {% if trip.is_archived %}
+                Restore
+            {% else %}
+                Archive
+            {% endif %}
+
+        </a>
+
+
+        <button
+            type="button"
+            class="btn btn-outline-danger"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteModal"
+            data-delete-url="{% url 'trips:delete' trip.pk %}"
+            data-delete-name="Trip #{{ trip.trip_ref_no }}"
+            data-delete-warning="This will permanently delete this trip and all associated accounting records."
+        >
+            <i class="bi bi-trash me-1"></i>
+            Delete
+        </button>
+
+
+        <a
+            href="{% url 'trips:list' %}"
+            class="btn btn-secondary"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     1. BASIC TRIP INFORMATION
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                1
+            </span>
+
+            Basic Trip Information
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body p-4">
+
+        <div class="row g-4">
+
+            <!-- Vehicle -->
+
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <div class="summary-label">
+                    Vehicle Number
+                </div>
+
+                <div class="summary-value text-primary">
+                    {{ trip.vehicle.vehicle_number }}
+                </div>
+
+                <small class="text-muted">
+                    {{ trip.vehicle.vehicle_type|default:"—" }}
+                </small>
+
+            </div>
+
+
+            <!-- Owner -->
+
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <div class="summary-label">
+                    Vehicle Owner
+                </div>
+
+                <div class="summary-value">
+                    {{ trip.vehicle.owner_name|default:"—" }}
+                </div>
+
+            </div>
+
+
+            <!-- Status -->
+
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <div class="summary-label">
+                    Record Status
+                </div>
+
+                <div class="mt-1">
+
+                    {% if trip.is_archived %}
+
+                        <span class="badge-custom badge-inactive">
+                            <span class="badge-indicator"></span>
+                            Archived
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge-custom badge-active">
+                            <span class="badge-indicator"></span>
+                            Active Record
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <!-- Primary Driver -->
+
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <div class="summary-label">
+                    Primary Driver
+                </div>
+
+                <div class="summary-value">
+                    {{ trip.primary_driver.full_name }}
+                </div>
+
+                {% if trip.primary_driver.mobile_number %}
+
+                    <small class="text-muted">
+                        {{ trip.primary_driver.mobile_number }}
+                    </small>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- Secondary Driver -->
+
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <div class="summary-label">
+                    Additional Driver
+                </div>
+
+                <div class="summary-value">
+
+                    {% if trip.secondary_driver %}
+                        {{ trip.secondary_driver.full_name }}
+                    {% else %}
+                        —
+                    {% endif %}
+
+                </div>
+
+                {% if trip.secondary_driver.mobile_number %}
+
+                    <small class="text-muted">
+                        {{ trip.secondary_driver.mobile_number }}
+                    </small>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- Entry Date -->
+
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <div class="summary-label">
+                    Entry Date
+                </div>
+
+                <div class="summary-value">
+                    {{ trip.entry_date|date:"d M Y" }}
+                </div>
+
+            </div>
+
+
+            <!-- Period -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="summary-label">
+                    Period
+                </div>
+
+                <div class="summary-value">
+
+                    {{ trip.period_from|date:"d M Y" }}
+
+                    <span class="text-muted mx-1">
+                        →
+                    </span>
+
+                    {{ trip.period_to|date:"d M Y" }}
+
+                </div>
+
+            </div>
+
+
+
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     2. KPI SUMMARY
+============================================================ -->
+
+<div class="row g-3 mb-4">
+
+
+    <!-- Total KM -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        Total Distance
+                    </div>
+
+                    <div class="kpi-value">
+
+                        {{ total_km|floatformat:2 }}
+
+                        <span style="font-size:.8rem;">
+                            KM
+                        </span>
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Start:
+                        {{ trip.km_detail.start_km|default:"—" }}
+
+                        |
+
+                        End:
+                        {{ trip.km_detail.end_km|default:"—" }}
+
+                    </div>
+
+                </div>
+
+                <div class="kpi-icon-box kpi-warning">
+
+                    <i class="bi bi-speedometer"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Income -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        Overall Income
+                    </div>
+
+                    <div class="kpi-value text-primary">
+
+                        ₹{{ overall_income|floatformat:2 }}
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Section 2 Revenue
+
+                    </div>
+
+                </div>
+
+                <div class="kpi-icon-box kpi-primary">
+
+                    <i class="bi bi-cash-stack"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Expense -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        Overall Expense
+                    </div>
+
+                    <div class="kpi-value text-danger">
+
+                        ₹{{ overall_expense|floatformat:2 }}
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Includes Section 4
+
+                    </div>
+
+                </div>
+
+                <div class="kpi-icon-box kpi-danger">
+
+                    <i class="bi bi-receipt"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Balance -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        Final Balance
+                    </div>
+
+                    <div class="kpi-value
+                        {% if final_balance >= 0 %}
+                            text-success
+                        {% else %}
+                            text-danger
+                        {% endif %}
+                    ">
+
+                        ₹{{ final_balance|floatformat:2 }}
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Income − Expense
+
+                    </div>
+
+                </div>
+
+                <div class="kpi-icon-box
+                    {% if final_balance >= 0 %}
+                        kpi-success
+                    {% else %}
+                        kpi-danger
+                    {% endif %}
+                ">
+
+                    <i class="bi bi-wallet2"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     3. KM DETAILS
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                3
+            </span>
+
+            KM Details
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+
+                <div class="summary-label">
+                    Starting KM
+                </div>
+
+                <div class="summary-value">
+                    {{ trip.km_detail.start_km|default:"0.00" }}
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-md-4">
+
+                <div class="summary-label">
+                    Ending KM
+                </div>
+
+                <div class="summary-value">
+                    {{ trip.km_detail.end_km|default:"0.00" }}
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-md-4">
+
+                <div class="summary-label">
+                    Total KM
+                </div>
+
+                <div class="summary-value text-primary">
+                    {{ total_km|floatformat:2 }}
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     4. SECTION 2 — LOAD & REVENUE
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                4
+            </span>
+
+            Load & Revenue Details
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom table-detail-generic">
+
+            <thead>
+
+                <tr>
+
+                    <th>Date</th>
+
+                    <th>From</th>
+
+                    <th>To</th>
+
+                    <th>Load / Place</th>
+
+                    <th class="text-end">
+                        Ton
+                    </th>
+
+                    <th class="text-end">
+                        Income
+                    </th>
+
+                    <th class="text-end">
+                        Commission
+                    </th>
+
+                    <th class="text-end">
+                        Loading
+                    </th>
+
+                    <th class="text-end">
+                        Unloading
+                    </th>
+
+                    <th class="text-center no-print">
+                        Action
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for lr in trip.load_revenue_entries.all %}
+
+                <tr>
+
+                    <td class="small">
+                        {{ lr.date|date:"d M Y" }}
+                    </td>
+
+                    <td>
+                        {{ lr.from_location|default:"—" }}
+                    </td>
+
+                    <td>
+                        {{ lr.to_location|default:"—" }}
+                    </td>
+
+                    <td>
+                        {{ lr.load_place|default:"—" }}
+                    </td>
+
+                    <td class="text-end">
+                        {{ lr.ton|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end fw-bold text-success">
+                        ₹{{ lr.income_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end fw-bold text-muted">
+                        ₹{{ lr.commission_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end fw-bold text-danger">
+                        ₹{{ lr.loading_charges|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end fw-bold text-danger">
+                        ₹{{ lr.unloading_charges|floatformat:2 }}
+                    </td>
+
+                    <td class="text-center no-print">
+
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+
+                            <button type="button"
+        class="btn btn-outline-primary btn-sm btn-icon edit-record-btn"
+        data-edit-url="{% url 'trips:load_revenue_edit' lr.id %}"
+        data-title="Edit Load & Revenue"
+        data-subtitle="Update load and revenue details">
+
+    <i class="bi bi-pencil"></i>
+</button>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm btn-icon"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal"
+                                data-delete-url="{% url 'trips:load_revenue_delete' lr.id %}"
+                                data-delete-name="{{ lr.load_place|default:'Load' }} - ₹{{ lr.income_amount|floatformat:2 }}"
+                            >
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="10"
+                        class="text-center text-muted py-4"
+                    >
+                        No load / revenue entries recorded.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+
+            <tfoot>
+
+                <tr class="fw-bold bg-light">
+
+                    <td colspan="4" class="text-end">
+                        TOTAL
+                    </td>
+
+                    <td class="text-end">
+                        {{ total_ton|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end text-success">
+                        ₹{{ overall_income|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end">
+                        ₹{{ commission_total|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end text-danger">
+                        ₹{{ trip.total_revenue_loading|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end text-danger">
+                        ₹{{ trip.total_revenue_unloading|floatformat:2 }}
+                    </td>
+
+                    <td></td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+    <div class="card-body pt-0">
+        <div class="expense-total-box p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-bold">Section 2 Load & Revenue Totals</div>
+            </div>
+            <div class="row g-2">
+                <div class="col-6 col-md-auto me-md-4">
+                    <small class="text-muted d-block">Total Ton</small>
+                    <span class="fw-bold">{{ total_ton|floatformat:2 }}</span>
+                </div>
+                <div class="col-6 col-md-auto me-md-4">
+                    <small class="text-muted d-block">Total Income</small>
+                    <span class="fw-bold text-success">₹{{ overall_income|floatformat:2 }}</span>
+                </div>
+                <div class="col-6 col-md-auto me-md-4">
+                    <small class="text-muted d-block">Total Commission</small>
+                    <span class="fw-bold">₹{{ commission_total|floatformat:2 }}</span>
+                </div>
+                <div class="col-6 col-md-auto me-md-4">
+                    <small class="text-muted d-block">Total Loading</small>
+                    <span class="fw-bold text-danger">₹{{ trip.total_revenue_loading|floatformat:2 }}</span>
+                </div>
+                <div class="col-6 col-md-auto">
+                    <small class="text-muted d-block">Total Unloading</small>
+                    <span class="fw-bold text-danger">₹{{ trip.total_revenue_unloading|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     5. FUEL DETAILS
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                5
+            </span>
+
+            Fuel Details
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom table-detail-generic">
+
+            <thead>
+
+                <tr>
+
+                    <th>Date</th>
+
+                    <th>Station</th>
+
+                    <th>Fuel Type</th>
+
+                    <th class="text-end">
+                        Quantity
+                    </th>
+
+                    <th class="text-end">
+                        Rate
+                    </th>
+
+                    <th class="text-end">
+                        Total Cost
+                    </th>
+
+                    <th class="text-center no-print">
+                        Action
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for fuel in trip.fuel_entries.all %}
+
+                <tr>
+
+                    <td>
+                        {{ fuel.fuel_date|date:"d M Y" }}
+                    </td>
+
+                    <td>
+                        {{ fuel.station_name|default:"—" }}
+                    </td>
+
+                    <td>
+
+                        {% if fuel.fuel_type == "Diesel" %}
+
+                            <span class="badge-custom badge-secondary">
+                                Diesel
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge-custom badge-primary">
+                                AdBlue
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="text-end">
+                        {{ fuel.quantity|floatformat:3 }} L
+                    </td>
+
+                    <td class="text-end">
+                        ₹{{ fuel.rate|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end fw-bold text-danger">
+                        ₹{{ fuel.total_cost|floatformat:2 }}
+                    </td>
+
+                    <td class="text-center no-print">
+
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary btn-sm btn-icon edit-record-btn"
+                                data-edit-url="{% url 'trips:fuel_edit' fuel.id %}"
+                                data-title="Edit Fuel Entry"
+                                data-subtitle="Update fuel details"
+                            >
+                                <i class="bi bi-pencil"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm btn-icon"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal"
+                                data-delete-url="{% url 'trips:fuel_delete' fuel.id %}"
+                                data-delete-name="{{ fuel.fuel_type }} - {{ fuel.quantity }} L"
+                            >
+                                <i class="bi bi-trash"></i>
+                            </button>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="7"
+                        class="text-center text-muted py-4"
+                    >
+                        No fuel entries recorded.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <div class="card-body border-top">
+
+        <div class="row g-3">
+
+            <!-- Diesel -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="p-3 border rounded-3">
+
+                    <div class="summary-label">
+                        Diesel
+                    </div>
+
+                    <div class="summary-value">
+                        {{ trip.total_diesel_quantity|floatformat:3 }}
+                        L
+                    </div>
+
+                    <div class="text-danger fw-bold mt-1">
+                        ₹{{ diesel_cost|floatformat:2 }}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- AdBlue -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="p-3 border rounded-3">
+
+                    <div class="summary-label">
+                        AdBlue
+                    </div>
+
+                    <div class="summary-value">
+                        {{ trip.total_adblue_quantity|floatformat:3 }}
+                        L
+                    </div>
+
+                    <div class="text-danger fw-bold mt-1">
+                        ₹{{ adblue_cost|floatformat:2 }}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Mileage -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="p-3 border rounded-3">
+
+                    <div class="summary-label">
+                        Mileage
+                    </div>
+
+                    <div class="summary-value text-primary">
+                        {{ trip.mileage|floatformat:2 }}
+                        KM/L
+                    </div>
+
+                    <small class="text-muted">
+                        Based on Diesel consumption
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- Total Fuel -->
+
+            <div class="col-12">
+
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+
+                    <span class="fw-bold">
+                        Total Fuel Cost
+                    </span>
+
+                    <span class="fw-bold text-danger fs-5">
+                        ₹{{ trip.total_fuel_cost|floatformat:2 }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- Total AdBlue -->
+
+            <div class="col-12">
+
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+
+                    <span class="fw-bold">
+                        Total AdBlue
+                    </span>
+
+                    <span class="fw-bold text-primary fs-5">
+                        {{ total_adblue_quantity|floatformat:3 }} L
+                        <span class="text-danger ms-2">
+                            ₹{{ adblue_cost|floatformat:2 }}
+                        </span>
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     6. SECTION 4 — OTHER EXPENSES
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                6
+            </span>
+
+            Section 4 — Other Expenses
+
+        </div>
+
+        <span class="badge-custom badge-danger">
+            Included in Overall Expense
+        </span>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom table-detail-generic">
+
+            <thead>
+
+                <tr>
+
+                    <th>Expense Name</th>
+
+                    <th class="text-end">
+                        Amount
+                    </th>
+
+                    <th class="text-center no-print">
+                        Action
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for expense in trip.expense_entries.all %}
+
+                <tr>
+
+                    <td class="fw-semibold">
+                        {{ expense.expense_name }}
+                    </td>
+
+                    <td class="text-end fw-bold text-danger">
+                        ₹{{ expense.amount|floatformat:2 }}
+                    </td>
+
+                    <td class="text-center no-print">
+
+                    <div class="d-flex justify-content-center align-items-center gap-2">
+
+                        <button
+    type="button"
+    class="btn btn-outline-primary btn-sm btn-icon edit-record-btn"
+    data-edit-url="{% url 'trips:expense_entry_edit' expense.id %}"
+    data-title="Edit Other Expense"
+    data-subtitle="Update expense details"
+>
+    <i class="bi bi-pencil"></i>
+</button>
+
+
+                            <button
+                            type="button"
+                            class="btn btn-outline-danger btn-sm btn-icon"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteModal"
+                            data-delete-url="{% url 'trips:expense_entry_delete' expense.pk %}"
+                            data-delete-name="Expense - {{ expense.expense_name }}"
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                    </div>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="3"
+                        class="text-center text-muted py-4"
+                    >
+                        No Section 4 expenses recorded.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+
+            <tfoot>
+
+                <tr class="fw-bold">
+
+                    <td colspan="1" class="text-end">
+                        TOTAL SECTION 4 EXPENSES
+                    </td>
+
+                    <td class="text-end text-danger fs-6">
+                        ₹{{ other_expenses|floatformat:2 }}
+                    </td>
+
+                    <td></td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+
+
+    <div class="card-body pt-0">
+
+        <div class="expense-total-box p-3">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <div class="fw-bold">
+                        Section 4 Other Expenses
+                    </div>
+
+                    <small class="text-muted">
+                        This amount is included in the final Overall Expense.
+                    </small>
+
+                </div>
+
+                <div class="fw-bold text-danger fs-5">
+
+                    ₹{{ other_expenses|floatformat:2 }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     7. RTO / PC
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                7
+            </span>
+
+            RTO / PC Expenses
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom table-detail-generic">
+
+            <thead>
+
+                <tr>
+
+                    <th>Place</th>
+
+                    <th>Type</th>
+
+                    <th class="text-end">
+                        Onward
+                    </th>
+
+                    <th class="text-end">
+                        Return
+                    </th>
+
+                    <th class="text-end">
+                        Total
+                    </th>
+
+                    <th class="text-center no-print">
+                        Action
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for entry in trip.rto_pc_entries.all %}
+
+                <tr>
+
+                    <td class="fw-semibold">
+                        {{ entry.place|default:"—" }}
+                    </td>
+
+                    <td>
+
+                        {% if entry.expense_type == "RTO" %}
+
+                            <span class="badge-custom badge-secondary">
+                                RTO
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge-custom badge-primary">
+                                PC
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="text-end">
+                        ₹{{ entry.onward_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end">
+                        ₹{{ entry.return_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end fw-bold text-danger">
+                        ₹{{ entry.total_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="text-center no-print">
+
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+
+                            <button type="button"
+        class="btn btn-outline-primary btn-sm btn-icon edit-record-btn"
+        data-edit-url="{% url 'trips:rto_pc_edit' entry.id %}"
+        data-title="Edit RTO / PC Expense"
+        data-subtitle="Update RTO / PC details">
+
+    <i class="bi bi-pencil"></i>
+</button>
+
+                            <button
+                            type="button"
+                            class="btn btn-outline-danger btn-sm btn-icon"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteModal"
+                            data-delete-url="{% url 'trips:rto_pc_delete' entry.pk %}"
+                            data-delete-name="{{ entry.expense_type }} - {{ entry.place }}"
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                        </div>
+
+                        </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="6"
+                        class="text-center text-muted py-4"
+                    >
+                        No RTO / PC expenses recorded.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+
+            <tfoot>
+
+                <tr class="fw-bold bg-light">
+
+                    <td colspan="4" class="text-end">
+                        TOTAL RTO
+                    </td>
+
+                    <td class="text-end text-danger">
+                        ₹{{ rto_expense|floatformat:2 }}
+                    </td>
+
+                    <td></td>
+
+                </tr>
+
+
+                <tr class="fw-bold bg-light">
+
+                    <td colspan="4" class="text-end">
+                        TOTAL PC
+                    </td>
+
+                    <td class="text-end text-danger">
+                        ₹{{ pc_expense|floatformat:2 }}
+                    </td>
+
+                    <td></td>
+
+                </tr>
+
+
+                <tr class="fw-bold">
+
+                    <td colspan="4" class="text-end">
+                        RTO + PC TOTAL
+                    </td>
+
+                    <td class="text-end text-danger">
+                        ₹{{ rto_pc_total|floatformat:2 }}
+                    </td>
+
+                    <td></td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+    <div class="card-body pt-0">
+        <div class="expense-total-box p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-bold">Section 5 RTO & PC Expense Totals</div>
+                <div class="fw-bold text-danger fs-5">₹{{ rto_pc_total|floatformat:2 }}</div>
+            </div>
+            <div class="row g-2">
+                <div class="col-6 col-md-auto me-md-4">
+                    <small class="text-muted d-block">Total RTO Only</small>
+                    <span class="fw-bold text-danger">₹{{ rto_expense|floatformat:2 }}</span>
+                </div>
+                <div class="col-6 col-md-auto">
+                    <small class="text-muted d-block">Total PC Only</small>
+                    <span class="fw-bold text-danger">₹{{ pc_expense|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     8. OTHER TOLL EXPENSES
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                8
+            </span>
+
+            Other Toll Expenses
+
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table-custom table-detail-generic">
+
+            <thead>
+    <tr>
+        <th style="width: 80px;" class="text-center">
+            S.No
+        </th>
+
+        <th>
+            Toll Name
+        </th>
+
+        <th class="text-end" style="width: 180px;">
+            Amount
+        </th>
+
+        <th class="text-center no-print" style="width: 120px;">
+            Action
+        </th>
+    </tr>
+</thead>
+
+            <tbody>
+
+    {% for toll in trip.other_toll_expenses.all %}
+
+    <tr>
+
+        <td class="text-center fw-semibold">
+            {{ forloop.counter }}
+        </td>
+
+        <td class="fw-semibold">
+            {{ toll.toll_name|default:"—" }}
+        </td>
+
+        <td class="text-end fw-bold text-danger">
+            ₹{{ toll.amount|floatformat:2 }}
+        </td>
+
+        <td class="text-center no-print">
+
+            <div class="d-flex justify-content-center align-items-center gap-2">
+
+                <button
+                type="button"
+                class="btn btn-outline-primary btn-sm btn-icon edit-record-btn"
+                data-edit-url="{% url 'trips:other_toll_edit' toll.id %}"
+                data-title="Edit Other Toll Expense"
+                data-subtitle="Update toll expense details"
+            >
+                <i class="bi bi-pencil"></i>
+            </button>
+
+                <button
+                type="button"
+                class="btn btn-outline-danger btn-sm btn-icon"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteModal"
+                data-delete-url="{% url 'trips:other_toll_delete' toll.id %}"
+                data-delete-name="Other Toll - {{ toll.toll_name }}"
+            >
+                <i class="bi bi-trash"></i>
+            </button>
+
+            </div>
+
+            </td>
+
+    </tr>
+
+    {% empty %}
+
+    <tr>
+        <td colspan="4"
+            class="text-center text-muted py-4">
+            No other toll expenses recorded.
+        </td>
+    </tr>
+
+    {% endfor %}
+
+</tbody>
+
+<tfoot>
+
+    <tr class="fw-bold bg-light">
+
+        <td colspan="2" class="text-end">
+            TOTAL OTHER TOLL EXPENSES
+        </td>
+
+        <td class="text-end text-danger">
+    ₹{{ trip.total_other_toll_expense|floatformat:2 }}
+</td>
+
+        <td></td>
+
+    </tr>
+
+</tfoot>
+
+        </table>
+
+    </div>
+    <div class="card-body pt-0">
+        <div class="expense-total-box p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold">Section 8 Other Toll Expenses</div>
+                    <small class="text-muted">This amount is included in the final Overall Expense.</small>
+                </div>
+                <div class="fw-bold text-danger fs-5">₹{{ trip.total_other_toll_expense|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     9. DRIVER SALARY & MANUAL ACCOUNTING EXPENSES
+============================================================ -->
+
+
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                9
+            </span>
+
+            Driver Salary & Other Accounting Expenses
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body">
+
+        <div class="row g-4">
+
+            <!-- Driver Salary -->
+
+            <div class="col-12 col-md-6 col-lg-3">
+
+                <div class="p-3 border rounded-3 h-100">
+
+                    <div class="summary-label">
+                        Driver Salary
+                    </div>
+
+                    <div class="summary-value text-danger mt-1">
+                        ₹{{ driver_salary|floatformat:2 }}
+                    </div>
+
+                    <small class="text-muted">
+                        13% of Overall Income
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- Cleaner -->
+
+            <div class="col-12 col-md-6 col-lg-3">
+
+                <div class="p-3 border rounded-3 h-100">
+
+                    <div class="summary-label">
+                        Cleaner Salary
+                    </div>
+
+                    <div class="summary-value text-danger mt-1">
+                        ₹{{ cleaner_salary|floatformat:2 }}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Workshop -->
+
+            <div class="col-12 col-md-6 col-lg-3">
+
+                <div class="p-3 border rounded-3 h-100">
+
+                    <div class="summary-label">
+                        Workshop Expense
+                    </div>
+
+                    <div class="summary-value text-danger mt-1">
+                        ₹{{ workshop_expense|floatformat:2 }}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Toll -->
+
+            <div class="col-12 col-md-6 col-lg-3">
+
+                <div class="p-3 border rounded-3 h-100">
+
+                    <div class="summary-label">
+                        Toll Gate Expense
+                    </div>
+
+                    <div class="summary-value text-danger mt-1">
+                        ₹{{ toll_gate_expense|floatformat:2 }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    
+    <div class="card-body pt-0">
+        <div class="expense-total-box p-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold">Section 9 Driver Salary & Accounting Totals</div>
+                    <small class="text-muted">Includes Salary, Cleaner, Workshop, and Toll Gate.</small>
+                </div>
+                <div class="fw-bold text-danger fs-5">₹{{ accounting_total|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     9. FINAL ACCOUNTING SUMMARY
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <span class="section-number">
+                10
+            </span>
+
+            Final Accounting Summary
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body p-4">
+
+        <div class="row g-4">
+
+
+            <!-- LEFT : INCOME -->
+
+            <div class="col-12 col-lg-5">
+
+                <div class="income-total-box p-4 h-100">
+
+                    <div class="summary-label mb-2">
+                        Overall Income
+                    </div>
+
+                    <div class="display-6 fw-bold text-success mb-4">
+
+                        ₹{{ overall_income|floatformat:2 }}
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Section 2 Income
+                        </span>
+
+                        <strong>
+                            ₹{{ overall_income|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Total Ton
+                        </span>
+
+                        <strong>
+                            {{ total_ton|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Commission
+                        </span>
+
+                        <strong class="text-muted">
+
+                            ₹{{ commission_total|floatformat:2 }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="mt-3">
+
+                        <small class="text-muted">
+                            Commission is <strong>included</strong> in Overall Expense.
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RIGHT : EXPENSE -->
+
+            <div class="col-12 col-lg-7">
+
+                <div class="expense-total-box p-4">
+
+                    <div class="summary-label mb-2">
+                        Overall Expense Breakdown
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Diesel Cost
+                        </span>
+
+                        <strong>
+                            ₹{{ diesel_cost|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            AdBlue Cost
+                        </span>
+
+                        <strong>
+                            ₹{{ adblue_cost|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Loading Charges
+                        </span>
+
+                        <strong>
+                            ₹{{ loading_charges|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Unloading Charges
+                        </span>
+
+                        <strong>
+                            ₹{{ unloading_charges|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Driver Salary (13%)
+                        </span>
+
+                        <strong>
+                            ₹{{ driver_salary|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Cleaner Salary
+                        </span>
+
+                        <strong>
+                            ₹{{ cleaner_salary|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Workshop Expense
+                        </span>
+
+                        <strong>
+                            ₹{{ workshop_expense|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            RTO Expense
+                        </span>
+
+                        <strong>
+                            ₹{{ rto_expense|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            PC Expense
+                        </span>
+
+                        <strong>
+                            ₹{{ pc_expense|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Toll Gate Expense
+                        </span>
+
+                        <strong>
+                            ₹{{ toll_gate_expense|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+                            Other Toll Expenses
+                        </span>
+
+                        <strong>
+    ₹{{ trip.total_other_toll_expense|floatformat:2 }}
+</strong>
+
+                    </div>
+
+
+                    <!-- SECTION 4 -->
+
+                    <div class="accounting-row d-flex justify-content-between">
+
+                        <span>
+
+                            Section 4 Other Expenses
+
+                            <small class="text-muted d-block">
+                                Included
+                            </small>
+
+                        </span>
+
+                        <strong class="text-danger">
+
+                            ₹{{ other_expenses|floatformat:2 }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- FINAL EXPENSE -->
+
+                    <div class="mt-4 pt-3 border-top">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <span class="fw-bold fs-5">
+                                OVERALL EXPENSE
+                            </span>
+
+                            <span class="fw-bold fs-4 text-danger">
+
+                                ₹{{ overall_expense|floatformat:2 }}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     11. FINAL BALANCE
+============================================================ -->
+
+<div class="app-card mb-4 final-balance
+    {% if final_balance >= 0 %}
+        bg-success-subtle
+    {% else %}
+        bg-danger-subtle
+    {% endif %}
+">
+
+    <div class="row align-items-center g-4">
+
+        <div class="col-12 col-md-7">
+
+            <div class="summary-label">
+                Final Accounting Balance
+            </div>
+
+            <h2 class="fw-bold mb-1
+                {% if final_balance >= 0 %}
+                    text-success
+                {% else %}
+                    text-danger
+                {% endif %}
+            ">
+
+                ₹{{ final_balance|floatformat:2 }}
+
+            </h2>
+
+            <div class="text-muted">
+
+                Overall Income − Overall Expense
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-5">
+
+            <div class="row g-3">
+
+                <div class="col-6">
+
+                    <div class="bg-white rounded-3 p-3">
+
+                        <small class="text-muted d-block">
+                            Income
+                        </small>
+
+                        <strong class="text-success">
+                            ₹{{ overall_income|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-6">
+
+                    <div class="bg-white rounded-3 p-3">
+
+                        <small class="text-muted d-block">
+                            Expense
+                        </small>
+
+                        <strong class="text-danger">
+                            ₹{{ overall_expense|floatformat:2 }}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     ACCOUNTING FORMULA NOTE
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex align-items-start gap-3">
+
+            <div class="text-primary fs-4">
+                <i class="bi bi-info-circle"></i>
+            </div>
+
+            <div>
+
+                <h6 class="fw-bold mb-2">
+                    Accounting Calculation
+                </h6>
+
+                <p class="mb-2 text-muted">
+
+                    Overall Expense includes Diesel, AdBlue, Loading,
+                    Unloading, Driver Salary at 13%, Cleaner Salary,
+                    Workshop Expense, RTO, PC, Toll Gate Expense,
+                    Other Toll Expenses and Section 4 Other Expenses.
+
+                </p>
+
+                <p class="mb-0 text-muted">
+
+                    Commission is <strong>included</strong> in Overall Expense.
+                    Other Toll Expenses are included in Overall Expense.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     BOTTOM SUMMARY
+============================================================ -->
+
+<div class="app-card mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="row text-center g-3">
+
+            <div class="col-12 col-md-4">
+
+                <small class="summary-label d-block">
+                    Overall Income
+                </small>
+
+                <span class="fw-bold fs-4 text-success">
+
+                    ₹{{ overall_income|floatformat:2 }}
+
+                </span>
+
+            </div>
+
+
+            <div class="col-12 col-md-4">
+
+                <small class="summary-label d-block">
+                    Overall Expense
+                </small>
+
+                <span class="fw-bold fs-4 text-danger">
+
+                    ₹{{ overall_expense|floatformat:2 }}
+
+                </span>
+
+            </div>
+
+
+            <div class="col-12 col-md-4">
+
+                <small class="summary-label d-block">
+                    Final Balance
+                </small>
+
+                <span class="fw-bold fs-3
+                    {% if final_balance >= 0 %}
+                        text-success
+                    {% else %}
+                        text-danger
+                    {% endif %}
+                ">
+
+                    ₹{{ final_balance|floatformat:2 }}
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     COMMON EDIT MODAL
+========================================================= -->
+
+<div class="modal fade"
+     id="commonEditModal"
+     tabindex="-1"
+     aria-labelledby="commonEditModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <div>
+                    <h5 class="modal-title fw-bold"
+                        id="commonEditModalLabel">
+                        Edit Record
+                    </h5>
+
+                    <small class="text-muted"
+                           id="commonEditModalSubtitle">
+                        Update record details
+                    </small>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body"
+                 id="commonEditModalBody">
+
+                <div class="text-center py-5">
+
+                    <div class="spinner-border text-primary"
+                         role="status">
+                    </div>
+
+                    <div class="mt-3 text-muted">
+                        Loading...
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const modalElement = document.getElementById('commonEditModal');
+    const modalBody = document.getElementById('commonEditModalBody');
+    const modalTitle = document.getElementById('commonEditModalLabel');
+    const modalSubtitle = document.getElementById('commonEditModalSubtitle');
+
+    if (!modalElement) {
+        console.error('commonEditModal not found');
+        return;
+    }
+
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap JS not loaded');
+        return;
+    }
+
+    const editModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+
+    /*
+    =========================================================
+    OPEN EDIT MODAL
+    =========================================================
+    */
+
+    document.addEventListener('click', function (event) {
+
+        const button = event.target.closest('.edit-record-btn');
+
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const editUrl = button.dataset.editUrl;
+        const title = button.dataset.title || 'Edit Record';
+        const subtitle =
+            button.dataset.subtitle || 'Update record details';
+
+        if (!editUrl) {
+            console.error('Missing data-edit-url');
+            return;
+        }
+
+        modalTitle.textContent = title;
+        modalSubtitle.textContent = subtitle;
+
+        modalBody.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <div class="mt-3 text-muted">
+                    Loading record...
+                </div>
+            </div>
+        `;
+
+        editModal.show();
+
+
+        fetch(editUrl, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        })
+        .then(response => {
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            return response.text();
+        })
+        .then(html => {
+
+            modalBody.innerHTML = html;
+
+            initializeEditForm();
+        })
+        .catch(error => {
+
+            console.error(error);
+
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Unable to load record.</strong>
+                    <div class="small mt-2">
+                        ${error.message}
+                    </div>
+                </div>
+            `;
+        });
+
+    });
+
+
+    /*
+    =========================================================
+    FORM SUBMIT
+    =========================================================
+    */
+
+    function initializeEditForm() {
+
+        const form = modalBody.querySelector('form');
+
+        if (!form) {
+            console.error(
+                'No edit form found inside modal'
+            );
+            return;
+        }
+
+        form.addEventListener('submit', function (event) {
+
+            event.preventDefault();
+
+            const submitButton =
+                form.querySelector('button[type="submit"]');
+
+            const originalText =
+                submitButton
+                    ? submitButton.innerHTML
+                    : 'Save Changes';
+
+
+            if (submitButton) {
+
+                submitButton.disabled = true;
+
+                submitButton.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Saving...
+                `;
+            }
+
+
+            fetch(form.action, {
+
+                method: 'POST',
+
+                body: new FormData(form),
+
+                credentials: 'same-origin',
+
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+
+            })
+            .then(async response => {
+
+                const contentType =
+                    response.headers.get('content-type') || '';
+
+                const text = await response.text();
+
+                if (contentType.includes('application/json')) {
+
+                    const data = JSON.parse(text);
+
+                    if (!response.ok || !data.success) {
+
+                        throw new Error(
+                            data.message ||
+                            'Unable to save changes.'
+                        );
+                    }
+
+                    return {
+                        success: true,
+                        data: data
+                    };
+                }
+
+
+                // Validation HTML returned
+                if (!response.ok) {
+
+                    modalBody.innerHTML = text;
+
+                    initializeEditForm();
+
+                    throw new Error(
+                        'Please correct the highlighted fields.'
+                    );
+                }
+
+
+                return {
+                    success: false
+                };
+            })
+            .then(result => {
+
+                if (result.success) {
+
+                    editModal.hide();
+
+                    // Recalculate everything
+                    window.location.reload();
+                }
+
+            })
+            .catch(error => {
+
+                console.error(
+                    'Save error:',
+                    error
+                );
+
+                if (
+                    error.message !==
+                    'Please correct the highlighted fields.'
+                ) {
+
+                    const alert =
+                        document.createElement('div');
+
+                    alert.className =
+                        'alert alert-danger mb-3';
+
+                    alert.textContent =
+                        error.message ||
+                        'Unable to save changes.';
+
+                    const currentForm =
+                        modalBody.querySelector('form');
+
+                    if (currentForm) {
+                        currentForm.prepend(alert);
+                    } else {
+                        modalBody.prepend(alert);
+                    }
+                }
+
+            })
+            .finally(() => {
+
+                if (submitButton) {
+
+                    submitButton.disabled = false;
+
+                    submitButton.innerHTML =
+                        originalText;
+                }
+
+            });
+
+        });
+    }
+
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,2797 @@
+{% extends "base.html" %}
+
+{% block title %}Fleet & Accounting Reports - Vehicle Ledger{% endblock %}
+{% block header_title %}Analytics & Reports{% endblock %}
+
+
+{% block extra_css %}
+
+<style>
+
+    /* =========================================================
+       REPORT PAGE
+       ========================================================= */
+
+    .report-stat-card {
+        height: 100%;
+    }
+
+    .report-stat-card .kpi-value {
+        white-space: nowrap;
+    }
+
+    .accounting-note {
+        font-size: 0.78rem;
+        color: #7a7f9a;
+    }
+
+    .report-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #16213f;
+    }
+
+    .report-table-total {
+        font-weight: 700;
+    }
+
+    .report-positive {
+        color: #198754 !important;
+    }
+
+    .report-negative {
+        color: #dc3545 !important;
+    }
+
+
+    /* =========================================================
+       PRINT
+       ========================================================= */
+
+    @media print {
+
+        .app-sidebar,
+        .app-header,
+        .app-footer,
+        .no-print {
+            display: none !important;
+        }
+
+        .main-wrapper {
+            margin-left: 0 !important;
+        }
+
+        .main-content {
+            padding: 0 !important;
+        }
+
+        .app-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+        }
+
+        body {
+            background: #fff !important;
+        }
+
+        .report-stat-card {
+            break-inside: avoid;
+        }
+
+        table {
+            font-size: 11px !important;
+        }
+
+    }
+
+</style>
+
+{% endblock %}
+
+
+
+{% block content %}
+
+<!-- =========================================================
+     PAGE HEADER
+     ========================================================= -->
+
+<div class="page-header no-print">
+
+    <div class="page-header-left">
+
+        <nav aria-label="breadcrumb">
+
+            <ol class="breadcrumb mb-1">
+
+                <li class="breadcrumb-item">
+
+                    <a href="{% url 'dashboard:index' %}">
+                        Home
+                    </a>
+
+                </li>
+
+                <li class="breadcrumb-item active"
+                    aria-current="page">
+
+                    Reports
+
+                </li>
+
+            </ol>
+
+        </nav>
+
+
+        <h1 class="page-title">
+
+            <i class="bi bi-file-earmark-bar-graph text-primary"></i>
+
+            Accounting & Fleet Performance Reports
+
+        </h1>
+
+
+        <p class="page-subtitle">
+
+            Vehicle-wise income, operating expenses, mileage
+            and final ledger balance.
+
+        </p>
+
+    </div>
+
+
+    <div class="page-header-right">
+
+        <button
+            onclick="window.print()"
+            class="btn btn-secondary fw-semibold"
+        >
+
+            <i class="bi bi-printer me-1"></i>
+
+            Print Statement
+
+        </button>
+
+
+        <a
+            href="{% url 'trips:reports_summary_pdf' %}?{{ request.GET.urlencode }}"
+            class="btn btn-danger fw-semibold"
+        >
+            <i class="bi bi-file-earmark-pdf me-1"></i>
+            PDF
+        </a>
+
+
+        <a
+            href="{% url 'trips:reports_summary_word' %}?{{ request.GET.urlencode }}"
+            class="btn btn-info fw-semibold text-white"
+        >
+            <i class="bi bi-file-earmark-word me-1"></i>
+            Word
+        </a>
+
+
+        <a
+            href="{% url 'ledger:index' %}"
+            class="btn btn-secondary"
+        >
+
+            <i class="bi bi-journal-text me-1"></i>
+
+            Ledger
+
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     FILTER TOOLBAR
+     ========================================================= -->
+
+<div class="filter-toolbar no-print mb-4">
+
+    <form
+        method="get"
+        class="filter-form"
+    >
+
+        <!-- Vehicle -->
+
+        <div class="filter-item">
+
+            <select
+                name="vehicle_id"
+                class="form-select form-select-sm"
+            >
+
+                <option value="">
+                    All Vehicles
+                </option>
+
+                {% for v in vehicles %}
+
+                <option
+                    value="{{ v.id }}"
+                    {% if vehicle_id == v.id|stringformat:"i" %}
+                        selected
+                    {% endif %}
+                >
+
+                    {{ v.vehicle_number }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- Driver -->
+
+        <div class="filter-item">
+
+            <select
+                name="driver_id"
+                class="form-select form-select-sm"
+            >
+
+                <option value="">
+                    All Drivers
+                </option>
+
+                {% for d in drivers %}
+
+                <option
+                    value="{{ d.id }}"
+                    {% if driver_id == d.id|stringformat:"i" %}
+                        selected
+                    {% endif %}
+                >
+
+                    {{ d.full_name }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- From Date -->
+
+        <div
+            class="filter-item"
+            style="max-width:140px;"
+        >
+
+            <input
+                type="date"
+                name="from_date"
+                value="{{ from_date }}"
+                class="form-control form-control-sm"
+                title="From Date"
+            >
+
+        </div>
+
+
+        <!-- To Date -->
+
+        <div
+            class="filter-item"
+            style="max-width:140px;"
+        >
+
+            <input
+                type="date"
+                name="to_date"
+                value="{{ to_date }}"
+                class="form-control form-control-sm"
+                title="To Date"
+            >
+
+        </div>
+
+
+        <!-- Actions -->
+
+        <div class="filter-actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+            >
+
+                <i class="bi bi-funnel me-1"></i>
+
+                Apply Filter
+
+            </button>
+
+
+            {% if vehicle_id or driver_id or from_date or to_date %}
+
+            <a
+                href="{% url 'reports:index' %}"
+                class="btn btn-secondary btn-sm"
+            >
+
+                Reset
+
+            </a>
+
+            {% endif %}
+
+        </div>
+
+    </form>
+
+</div>
+
+
+
+<!-- =========================================================
+     PRIMARY KPI CARDS
+     ========================================================= -->
+
+<div class="row g-3 mb-4">
+
+
+    <!-- TOTAL TRIPS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card report-stat-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        TOTAL TRIPS
+                    </div>
+
+                    <div class="kpi-value text-primary">
+
+                        {{ total_trips }}
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Active ledger trips
+
+                    </div>
+
+                </div>
+
+
+                <div class="kpi-icon-box kpi-primary">
+
+                    <i class="bi bi-journal-text"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- OVERALL INCOME -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card report-stat-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        OVERALL INCOME
+                    </div>
+
+                    <div class="kpi-value text-success">
+
+                        ₹{{ total_income|floatformat:2 }}
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Section 2 trip revenue
+
+                    </div>
+
+                </div>
+
+
+                <div class="kpi-icon-box kpi-success">
+
+                    <i class="bi bi-cash-stack"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- OVERALL EXPENSE -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card report-stat-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        OVERALL EXPENSE
+                    </div>
+
+                    <div class="kpi-value text-danger">
+
+                        ₹{{ total_overall_expense|floatformat:2 }}
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Authoritative operating expense
+
+                    </div>
+
+                </div>
+
+
+                <div class="kpi-icon-box kpi-danger">
+
+                    <i class="bi bi-credit-card-2-front"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- NET BALANCE -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="kpi-card report-stat-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        NET BALANCE
+                    </div>
+
+
+                    <div
+                        class="kpi-value
+                        {% if total_balance >= 0 %}
+                            text-success
+                        {% else %}
+                            text-danger
+                        {% endif %}
+                        "
+                    >
+
+                        ₹{{ total_balance|floatformat:2 }}
+
+                    </div>
+
+
+                    <div class="kpi-subtext">
+
+                        <span
+                            class="badge-custom
+                            {% if total_balance >= 0 %}
+                                badge-active
+                            {% else %}
+                                badge-danger
+                            {% endif %}
+                            "
+                        >
+
+                            <span class="badge-indicator"></span>
+
+                            {% if total_balance >= 0 %}
+
+                                Operating Surplus
+
+                            {% else %}
+
+                                Operating Loss
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="kpi-icon-box
+                    {% if total_balance >= 0 %}
+                        kpi-success
+                    {% else %}
+                        kpi-danger
+                    {% endif %}
+                    "
+                >
+
+                    <i class="bi bi-wallet2"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     OPERATIONAL KPI
+     ========================================================= -->
+
+<div class="row g-3 mb-4">
+
+
+    <!-- TOTAL KM -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        TOTAL DISTANCE
+                    </div>
+
+                    <div class="kpi-value text-info">
+
+                        {{ total_km|floatformat:2 }}
+
+                        <span
+                            style="
+                                font-size:0.85rem;
+                                color:#8B5E3C;
+                            "
+                        >
+                            KM
+                        </span>
+
+                    </div>
+
+                    <div class="kpi-subtext">
+                        Recorded trip distance
+                    </div>
+
+                </div>
+
+
+                <div class="kpi-icon-box kpi-info">
+
+                    <i class="bi bi-signpost-2"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- DIESEL -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        DIESEL CONSUMPTION
+                    </div>
+
+                    <div class="kpi-value text-warning">
+
+                        {{ total_diesel_qty|floatformat:2 }}
+
+                        <span
+                            style="
+                                font-size:0.85rem;
+                                color:#8B5E3C;
+                            "
+                        >
+                            L
+                        </span>
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Diesel Cost:
+                        ₹{{ total_diesel_cost|floatformat:2 }}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kpi-icon-box">
+
+                    <i class="bi bi-fuel-pump"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- MILEAGE -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="kpi-card">
+
+            <div class="kpi-inner">
+
+                <div class="kpi-info">
+
+                    <div class="kpi-label">
+                        AVERAGE MILEAGE
+                    </div>
+
+                    <div class="kpi-value text-primary">
+
+                        {{ avg_mileage|floatformat:2 }}
+
+                        <span
+                            style="
+                                font-size:0.85rem;
+                                color:#8B5E3C;
+                            "
+                        >
+                            KM/L
+                        </span>
+
+                    </div>
+
+                    <div class="kpi-subtext">
+
+                        Fuel Cost / KM:
+                        ₹{{ fuel_cost_per_km|floatformat:2 }}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kpi-icon-box kpi-primary">
+
+                    <i class="bi bi-speedometer2"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     ACCOUNTING BREAKDOWN + CHART
+     ========================================================= -->
+
+<div class="row g-4 mb-4">
+
+
+    <!-- ACCOUNTING BREAKDOWN -->
+
+    <div class="col-12 col-lg-8">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+
+                <div class="card-title">
+
+                    <i class="bi bi-calculator text-primary"></i>
+
+                    Detailed Accounting Breakdown
+
+                </div>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table-custom">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Accounting Item
+                            </th>
+
+                            <th class="text-end">
+                                Amount (₹)
+                            </th>
+
+                            <th class="text-end">
+                                % of Income
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        <!-- INCOME -->
+
+                        <tr class="table-active">
+
+                            <td>
+
+                                <strong class="text-primary-dark">
+
+                                    Overall Income
+
+                                </strong>
+
+                            </td>
+
+
+                            <td class="text-end fw-bold text-success">
+
+                                ₹{{ total_income|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end fw-bold">
+
+                                100.0%
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- DIESEL -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-fuel-pump me-2"></i>
+
+                                Diesel Cost
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_diesel_cost|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_diesel_cost total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- ADBLUE -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-droplet me-2"></i>
+
+                                AdBlue Cost
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_adblue_cost|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_adblue_cost total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- LOADING -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-box-arrow-in-down me-2"></i>
+
+                                Loading Charges
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_loading|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_loading total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- UNLOADING -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-box-arrow-up me-2"></i>
+
+                                Unloading Charges
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_unloading|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_unloading total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- DRIVER SALARY -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-person-badge me-2"></i>
+
+                                Driver Salary
+
+                                <small class="text-muted">
+                                    (13%)
+                                </small>
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_driver_salary|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_driver_salary total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- CLEANER -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-person me-2"></i>
+
+                                Cleaner Salary
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_cleaner_salary|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_cleaner_salary total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- WORKSHOP -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-tools me-2"></i>
+
+                                Workshop Expense
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_workshop_expense|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_workshop_expense total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- RTO -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-card-checklist me-2"></i>
+
+                                RTO Expense
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_rto|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_rto total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- PC -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-file-earmark-text me-2"></i>
+
+                                PC Expense
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_pc|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_pc total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- TOLL -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-signpost me-2"></i>
+
+                                Toll Gate Expense
+
+                            </td>
+
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_toll_gate|floatformat:2 }}
+
+                            </td>
+
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_toll_gate total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- OTHER TOLL -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-signpost-2 me-2"></i>
+
+                                Other Toll Expenses
+
+                            </td>
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_other_toll_expense|default:'0'|floatformat:2 }}
+
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_other_toll_expense total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- SECTION 4 OTHER EXPENSES -->
+
+                        <tr>
+
+                            <td>
+
+                                <i class="bi bi-receipt-cutoff me-2"></i>
+
+                                Section 4 Expenses
+
+                            </td>
+
+                            <td class="text-end fw-semibold">
+
+                                ₹{{ total_other_expenses|default:'0'|floatformat:2 }}
+
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+
+                                    {% widthratio total_other_expenses total_income 100 %}%
+
+                                {% else %}
+
+                                    0%
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- OVERALL EXPENSE -->
+
+                        <tr class="bg-light">
+
+                            <td>
+
+                                <strong class="text-danger">
+
+                                    Overall Expense
+
+                                </strong>
+
+                            </td>
+
+
+                            <td class="text-end">
+
+                                <strong class="text-danger">
+
+                                    ₹{{ total_overall_expense|floatformat:2 }}
+
+                                </strong>
+
+                            </td>
+
+
+                            <td class="text-end text-danger fw-bold">
+
+                                {{ expense_ratio }}%
+
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- BALANCE -->
+
+                        <tr>
+
+                            <td>
+
+                                <strong
+                                    class="
+                                    {% if total_balance >= 0 %}
+                                        text-success
+                                    {% else %}
+                                        text-danger
+                                    {% endif %}
+                                    "
+                                >
+
+                                    Net Balance
+
+                                </strong>
+
+                            </td>
+
+
+                            <td class="text-end">
+
+                                <strong
+                                    class="
+                                    fs-5
+                                    {% if total_balance >= 0 %}
+                                        text-success
+                                    {% else %}
+                                        text-danger
+                                    {% endif %}
+                                    "
+                                >
+
+                                    ₹{{ total_balance|floatformat:2 }}
+
+                                </strong>
+
+                            </td>
+
+
+                            <td
+                                class="
+                                text-end
+                                fw-bold
+                                {% if total_balance >= 0 %}
+                                    text-success
+                                {% else %}
+                                    text-danger
+                                {% endif %}
+                                "
+                            >
+
+                                {{ profit_margin }}%
+
+                            </td>
+
+                        </tr>
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- EXPENSE CHART -->
+
+    <div class="col-12 col-lg-4 no-print">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+
+                <div class="card-title">
+
+                    <i class="bi bi-pie-chart-fill text-primary"></i>
+
+                    Overall Expense Allocation
+
+                </div>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div
+                    style="
+                        position:relative;
+                        height:280px;
+                    "
+                >
+
+                    <canvas
+                        id="reportExpenseChart"
+                    ></canvas>
+
+                </div>
+
+
+                <div class="text-center mt-3">
+
+                    <small class="text-muted">
+
+                        Commission is included in Overall Expense.
+                        Section 4 Expenses and Other Toll Expenses are included.
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     ADDITIONAL / EXCLUDED ITEMS
+     ========================================================= -->
+
+<div class="row g-3 mb-4">
+
+
+    <!-- COMMISSION -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex align-items-center gap-3">
+
+                    <div class="kpi-icon-box">
+
+                        <i class="bi bi-percent"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="kpi-label">
+
+                            COMMISSION
+
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+
+                            ₹{{ total_commission|floatformat:2 }}
+
+                        </div>
+
+                        <div class="accounting-note">
+
+                            Display only — excluded from
+                            Overall Expense.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- SECTION 4 -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex align-items-center gap-3">
+
+                    <div class="kpi-icon-box">
+
+                        <i class="bi bi-receipt"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="kpi-label">
+
+                            SECTION 4 OTHER EXPENSES
+
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+
+                            ₹{{ total_other_expenses|floatformat:2 }}
+
+                        </div>
+
+                        <div class="accounting-note">
+
+                            Included in Overall Expense.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- OTHER TOLL -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex align-items-center gap-3">
+
+                    <div class="kpi-icon-box">
+
+                        <i class="bi bi-signpost-2"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="kpi-label">
+
+                            OTHER TOLL EXPENSES
+
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+
+                            ₹{{ total_other_toll_expense|default:'0'|floatformat:2 }}
+
+                        </div>
+
+                        <div class="accounting-note">
+
+                            Included in Overall Expense.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ADBLUE -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex align-items-center gap-3">
+
+                    <div class="kpi-icon-box">
+
+                        <i class="bi bi-droplet"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="kpi-label">
+
+                            ADBLUE
+
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+
+                            {{ total_adblue_qty|floatformat:2 }} L
+
+                        </div>
+
+                        <div class="accounting-note">
+
+                            Cost:
+                            ₹{{ total_adblue_cost|floatformat:2 }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     TRIP-WISE PERFORMANCE
+     ========================================================= -->
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <i class="bi bi-table text-primary"></i>
+
+            Trip-wise Performance
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Date
+                    </th>
+
+                    <th>
+                        Trip Ref
+                    </th>
+
+                    <th>
+                        Vehicle
+                    </th>
+
+                    <th>
+                        Driver
+                    </th>
+
+                    <th class="text-end">
+                        KM
+                    </th>
+
+                    <th class="text-end">
+                        Income
+                    </th>
+
+                    <th class="text-end">
+                        Expense
+                    </th>
+
+                    <th class="text-end">
+                        Balance
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for row in report_rows %}
+
+                <tr>
+
+
+                    <!-- DATE -->
+
+                    <td>
+
+                        {{ row.trip.entry_date|date:"d-m-Y" }}
+
+                    </td>
+
+
+
+                    <!-- TRIP REF -->
+
+                    <td>
+
+                        <a
+                            href="{% url 'trips:detail' row.trip.pk %}"
+                            class="fw-semibold text-decoration-none"
+                        >
+
+                            {{ row.trip.trip_ref_no }}
+
+                        </a>
+
+                    </td>
+
+
+
+                    <!-- VEHICLE -->
+
+                    <td>
+
+                        {{ row.trip.vehicle.vehicle_number }}
+
+                    </td>
+
+
+
+                    <!-- DRIVER -->
+
+                    <td>
+
+                        {{ row.trip.primary_driver.full_name }}
+
+                    </td>
+
+
+
+                    <!-- KM -->
+
+                    <td class="text-end">
+
+                        {{ row.trip.total_km|floatformat:2 }}
+
+                    </td>
+
+
+
+                    <!-- INCOME -->
+
+                    <td class="text-end text-success fw-semibold">
+
+                        ₹{{ row.income|floatformat:2 }}
+
+                    </td>
+
+
+
+                    <!-- EXPENSE -->
+
+                    <td class="text-end text-danger">
+
+                        ₹{{ row.overall_expense|floatformat:2 }}
+
+                    </td>
+
+
+
+                    <!-- BALANCE -->
+
+                    <td
+                        class="
+                        text-end
+                        fw-bold
+                        {% if row.balance >= 0 %}
+                            text-success
+                        {% else %}
+                            text-danger
+                        {% endif %}
+                        "
+                    >
+
+                        ₹{{ row.balance|floatformat:2 }}
+
+                    </td>
+
+
+                </tr>
+
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="8"
+                        class="text-center text-muted py-5"
+                    >
+
+                        <div class="mb-2">
+
+                            <i
+                                class="bi bi-journal-x"
+                                style="font-size:2rem;"
+                            ></i>
+
+                        </div>
+
+                        No trips found for the selected filters.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+
+
+            {% if report_rows %}
+
+            <tfoot>
+
+                <tr class="table-active">
+
+                    <th colspan="4">
+
+                        TOTAL
+
+                    </th>
+
+
+                    <th class="text-end">
+
+                        {{ total_km|floatformat:2 }}
+
+                    </th>
+
+
+                    <th class="text-end text-success">
+
+                        ₹{{ total_income|floatformat:2 }}
+
+                    </th>
+
+
+                    <th class="text-end text-danger">
+
+                        ₹{{ total_overall_expense|floatformat:2 }}
+
+                    </th>
+
+
+                    <th
+                        class="
+                        text-end
+                        {% if total_balance >= 0 %}
+                            text-success
+                        {% else %}
+                            text-danger
+                        {% endif %}
+                        "
+                    >
+
+                        ₹{{ total_balance|floatformat:2 }}
+
+                    </th>
+
+                </tr>
+
+            </tfoot>
+
+            {% endif %}
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     FINAL ACCOUNTING REPORT
+========================================================= -->
+
+<div class="app-card mb-4 no-print">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <i class="bi bi-calculator text-primary me-2"></i>
+
+            Final Accounting Report
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body p-4">
+
+        <!-- =====================================================
+             INCOME SUMMARY
+        ====================================================== -->
+
+        <div class="border rounded-3 mb-4">
+
+            <div class="p-3 border-bottom bg-light">
+
+                <h6 class="fw-bold mb-0 text-success">
+
+                    <i class="bi bi-arrow-down-circle me-2"></i>
+
+                    Income Summary
+
+                </h6>
+
+            </div>
+
+
+            <div class="p-3">
+
+                <div class="row g-3">
+
+                    <div class="col-12 col-md-6">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <span class="fw-semibold">
+                                Overall Income
+                            </span>
+
+                            <strong class="text-success fs-5">
+
+                                ₹{{ total_income|floatformat:2 }}
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12 col-md-6">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <span class="fw-semibold">
+                                Commission
+                            </span>
+
+                            <strong>
+
+                                ₹{{ total_commission|floatformat:2 }}
+
+                            </strong>
+
+                        </div>
+
+                        <small class="text-muted">
+                            Displayed separately and excluded from Overall Expense.
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             EXPENSE BREAKDOWN
+        ====================================================== -->
+
+        <div class="border rounded-3 mb-4">
+
+            <div class="p-3 border-bottom bg-light">
+
+                <h6 class="fw-bold mb-0 text-danger">
+
+                    <i class="bi bi-arrow-up-circle me-2"></i>
+
+                    Overall Expense Breakdown
+
+                </h6>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Expense
+                            </th>
+
+                            <th class="text-end">
+                                Amount
+                            </th>
+
+                            <th class="text-end">
+                                % of Income
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        <!-- DIESEL -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-fuel-pump me-2"></i>
+                                Diesel Cost
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_diesel_cost|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_diesel_cost total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- ADBLUE -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-droplet me-2"></i>
+                                AdBlue Cost
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_adblue_cost|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_adblue_cost total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- LOADING -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-box-arrow-in-down me-2"></i>
+                                Loading Charges
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_loading|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_loading total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- UNLOADING -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-box-arrow-up me-2"></i>
+                                Unloading Charges
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_unloading|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_unloading total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- DRIVER SALARY -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-person-badge me-2"></i>
+                                Driver Salary
+                                <small class="text-muted">(13%)</small>
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_driver_salary|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+                                13%
+                            </td>
+
+                        </tr>
+
+
+                        <!-- CLEANER -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-person me-2"></i>
+                                Cleaner Salary
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_cleaner_salary|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_cleaner_salary total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- WORKSHOP -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-tools me-2"></i>
+                                Workshop Expense
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_workshop_expense|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_workshop_expense total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- RTO -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-card-checklist me-2"></i>
+                                RTO Expense
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_rto|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_rto total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- PC -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                PC Expense
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_pc|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_pc total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- TOLL GATE -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-signpost me-2"></i>
+                                Toll Gate Expense
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_toll_gate|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_toll_gate total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- OTHER TOLL -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-signpost-2 me-2"></i>
+                                Other Toll Expenses
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_other_toll_expense|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_other_toll_expense total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        <!-- SECTION 4 -->
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-receipt-cutoff me-2"></i>
+                                Section 4 Expenses
+                            </td>
+
+                            <td class="text-end">
+                                ₹{{ total_other_expenses|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end text-muted">
+
+                                {% if total_income > 0 %}
+                                    {% widthratio total_other_expenses total_income 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                    </tbody>
+
+
+                    <!-- TOTAL -->
+
+                    <tfoot>
+
+                        <tr class="table-active">
+
+                            <th>
+                                OVERALL EXPENSE
+                            </th>
+
+                            <th class="text-end text-danger fs-5">
+
+                                ₹{{ total_overall_expense|floatformat:2 }}
+
+                            </th>
+
+                            <th class="text-end text-danger">
+
+                                {{ expense_ratio }}%
+
+                            </th>
+
+                        </tr>
+
+                    </tfoot>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             FINAL RESULT
+        ====================================================== -->
+
+        <div class="row g-3">
+
+            <!-- INCOME -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="p-4 border rounded-3 h-100">
+
+                    <small class="text-muted fw-bold d-block text-uppercase">
+                        Overall Income
+                    </small>
+
+                    <div class="fs-3 fw-bold text-success mt-2">
+
+                        ₹{{ total_income|floatformat:2 }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- EXPENSE -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="p-4 border rounded-3 h-100">
+
+                    <small class="text-muted fw-bold d-block text-uppercase">
+                        Overall Expense
+                    </small>
+
+                    <div class="fs-3 fw-bold text-danger mt-2">
+
+                        ₹{{ total_overall_expense|floatformat:2 }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- BALANCE -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="p-4 border rounded-3 h-100">
+
+                    <small class="text-muted fw-bold d-block text-uppercase">
+                        Final Balance
+                    </small>
+
+                    <div class="
+                        fs-3
+                        fw-bold
+                        mt-2
+                        {% if total_balance >= 0 %}
+                            text-success
+                        {% else %}
+                            text-danger
+                        {% endif %}
+                    ">
+
+                        ₹{{ total_balance|floatformat:2 }}
+
+                    </div>
+
+                    <small class="text-muted">
+
+                        Profit Margin:
+                        {{ profit_margin }}%
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             FORMULA
+        ====================================================== -->
+
+        <div class="alert alert-info mt-4 mb-0">
+
+            <div class="fw-bold mb-2">
+
+                <i class="bi bi-info-circle me-1"></i>
+
+                Accounting Formula
+
+            </div>
+
+            <div class="small">
+
+                <strong>Overall Expense</strong> =
+
+                Diesel + AdBlue + Loading + Unloading
+                + Driver Salary (13%) + Cleaner Salary
+                + Workshop + RTO + PC + Toll Gate
+                + Other Toll + Section 4 Expenses
+
+            </div>
+
+            <div class="small mt-2">
+
+                <strong>Final Balance</strong> =
+
+                Overall Income − Overall Expense
+
+            </div>
+
+            <div class="small mt-2">
+
+                <strong>Commission</strong> is displayed separately
+                and is not included in Overall Expense.
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const reportChartEl =
+            document.getElementById(
+                'reportExpenseChart'
+            );
+
+
+        if (!reportChartEl) {
+            return;
+        }
+
+
+        /* =====================================================
+           EXPENSE VALUES
+           Only actual Overall Expense components
+           ===================================================== */
+
+        const diesel =
+            parseFloat(
+                "{{ total_diesel_cost|default:'0' }}"
+            ) || 0;
+
+
+        const adblue =
+            parseFloat(
+                "{{ total_adblue_cost|default:'0' }}"
+            ) || 0;
+
+
+        const loading =
+            parseFloat(
+                "{{ total_loading|default:'0' }}"
+            ) || 0;
+
+
+        const unloading =
+            parseFloat(
+                "{{ total_unloading|default:'0' }}"
+            ) || 0;
+
+
+        const driverSalary =
+            parseFloat(
+                "{{ total_driver_salary|default:'0' }}"
+            ) || 0;
+
+
+        const cleanerSalary =
+            parseFloat(
+                "{{ total_cleaner_salary|default:'0' }}"
+            ) || 0;
+
+
+        const workshop =
+            parseFloat(
+                "{{ total_workshop_expense|default:'0' }}"
+            ) || 0;
+
+
+        const rto =
+            parseFloat(
+                "{{ total_rto|default:'0' }}"
+            ) || 0;
+
+
+        const pc =
+            parseFloat(
+                "{{ total_pc|default:'0' }}"
+            ) || 0;
+
+
+        const toll =
+            parseFloat(
+                "{{ total_toll_gate|default:'0' }}"
+            ) || 0;
+
+
+        const otherToll =
+            parseFloat(
+                "{{ total_other_toll_expense|default:'0' }}"
+            ) || 0;
+
+
+        const section4 =
+            parseFloat(
+                "{{ total_other_expenses|default:'0' }}"
+            ) || 0;
+
+
+        /* =====================================================
+           CHART
+           ===================================================== */
+
+        new Chart(
+            reportChartEl,
+            {
+                type: 'doughnut',
+
+                data: {
+
+                    labels: [
+                        'Diesel',
+                        'AdBlue',
+                        'Loading',
+                        'Unloading',
+                        'Driver Salary',
+                        'Cleaner Salary',
+                        'Workshop',
+                        'RTO',
+                        'PC',
+                        'Toll Gate',
+                        'Other Toll',
+                        'Section 4 Expenses'
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            data: [
+                                diesel,
+                                adblue,
+                                loading,
+                                unloading,
+                                driverSalary,
+                                cleanerSalary,
+                                workshop,
+                                rto,
+                                pc,
+                                toll,
+                                otherToll,
+                                section4
+                            ],
+
+                            /* =================================================
+                               DIFFERENT COLOR FOR EACH EXPENSE CATEGORY
+                               ================================================= */
+
+                            backgroundColor: [
+                                '#6F4E37',  /* Diesel */
+                                '#06B6D4',  /* AdBlue */
+                                '#10B981',  /* Loading */
+                                '#14B8A6',  /* Unloading */
+                                '#F59E0B',  /* Driver Salary */
+                                '#F97316',  /* Cleaner Salary */
+                                '#EF4444',  /* Workshop */
+                                '#8B5CF6',  /* RTO */
+                                '#A855F7',  /* PC */
+                                '#EC4899',  /* Toll Gate */
+                                '#E11D48',  /* Other Toll */
+                                '#64748B'   /* Section 4 Expenses */
+                            ],
+
+                            hoverBackgroundColor: [
+                                '#1D4ED8',
+                                '#0891B2',
+                                '#059669',
+                                '#0F766E',
+                                '#D97706',
+                                '#EA580C',
+                                '#DC2626',
+                                '#7C3AED',
+                                '#9333EA',
+                                '#DB2777',
+                                '#BE123C',
+                                '#8B5E3C'
+                            ],
+
+                            borderWidth: 2,
+
+                            borderColor: '#ffffff',
+
+                            hoverOffset: 8
+
+                        }
+
+                    ]
+
+                },
+
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    cutout: '62%',
+
+                    plugins: {
+
+                        legend: {
+
+                            position: 'bottom',
+
+                            labels: {
+
+                                boxWidth: 12,
+
+                                boxHeight: 12,
+
+                                padding: 12,
+
+                                usePointStyle: false,
+
+                                font: {
+
+                                    family: 'Poppins',
+
+                                    size: 10,
+
+                                    weight: '500'
+
+                                }
+
+                            }
+
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label: function(context) {
+
+                                    const value = Number(context.raw || 0);
+
+                                    const total = context.dataset.data.reduce(
+                                        (sum, item) => sum + Number(item || 0),
+                                        0
+                                    );
+
+                                    const percentage = total > 0
+                                        ? ((value / total) * 100).toFixed(1)
+                                        : '0.0';
+
+                                    return ' ' + context.label +
+                                        ': ₹' + value.toLocaleString('en-IN', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }) +
+                                        ' (' + percentage + '%)';
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
+
+{% endblock %}

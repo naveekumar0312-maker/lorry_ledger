@@ -1,0 +1,1017 @@
+{% extends "base.html" %}
+
+{% block title %}Trip Ledger Records - Vehicle Ledger{% endblock %}
+{% block header_title %}Trip Ledger{% endblock %}
+
+{% block content %}
+
+<style>
+    .trip-action-popup {
+        position: fixed;
+        z-index: 99999;
+        width: 190px;
+        background: #fff;
+        border: 1px solid #D8C7B8;
+        border-radius: 12px;
+        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.18);
+        padding: 6px;
+        display: none;
+    }
+
+    .trip-action-popup.show {
+        display: block;
+    }
+
+    .trip-action-popup .action-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 0;
+        background: transparent;
+        padding: 10px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: #4A2C20;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .trip-action-popup .action-item:hover {
+        background: #FBF8F5;
+    }
+
+    .trip-action-popup .action-item i {
+        width: 18px;
+        font-size: 16px;
+    }
+
+    .trip-action-popup .view-action i {
+        color: #6F4E37;
+    }
+
+    .trip-action-popup .edit-action i {
+        color: #f59e0b;
+    }
+
+    .trip-action-popup .delete-action {
+        color: #dc2626;
+    }
+
+    .trip-action-popup .delete-action:hover {
+        background: #fef2f2;
+    }
+
+    .trip-action-popup .action-divider {
+        height: 1px;
+        background: #D8C7B8;
+        margin: 5px 4px;
+    }
+</style>
+
+
+<!-- =========================================================
+     PAGE HEADER
+========================================================= -->
+
+<div class="page-header">
+
+    <div class="page-header-left">
+
+        <nav aria-label="breadcrumb">
+
+            <ol class="breadcrumb mb-1">
+
+                <li class="breadcrumb-item">
+                    <a href="{% url 'dashboard:index' %}">
+                        Home
+                    </a>
+                </li>
+
+                <li class="breadcrumb-item active">
+                    Trips Ledger
+                </li>
+
+            </ol>
+
+        </nav>
+
+        <h1 class="page-title">
+
+            <i class="bi bi-signpost-2 text-primary"></i>
+
+            Vehicle Trip Ledger Records
+
+        </h1>
+
+        <p class="page-subtitle">
+            Unified operational log of routes, mileage, fuel charges,
+            freight income and net profitability
+        </p>
+
+    </div>
+
+
+    <div class="page-header-right">
+
+        <a
+            href="{% url 'trips:create' %}"
+            class="btn btn-primary fw-bold"
+        >
+            <i class="bi bi-plus-lg"></i>
+            <span>New Trip Entry</span>
+        </a>
+
+        <a
+            href="{% url 'reports:index' %}"
+            class="btn btn-secondary"
+        >
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Ledger Reports</span>
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     FILTER TOOLBAR
+========================================================= -->
+
+<div class="filter-toolbar">
+
+    <form method="get" class="filter-form">
+
+        <div class="filter-search">
+
+            <i class="bi bi-search"></i>
+
+            <input
+                type="text"
+                name="q"
+                value="{{ search_query }}"
+                class="form-control form-control-sm"
+                placeholder="Search Ref No, vehicle, driver, route..."
+            >
+
+        </div>
+
+
+        <div class="filter-item">
+
+            <select
+                name="vehicle"
+                class="form-select form-select-sm"
+            >
+
+                <option value="">
+                    All Vehicles
+                </option>
+
+                {% for v in vehicles %}
+
+                <option
+                    value="{{ v.id }}"
+                    {% if vehicle_filter == v.id|stringformat:"i" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ v.vehicle_number }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="filter-item">
+
+            <select
+                name="driver"
+                class="form-select form-select-sm"
+            >
+
+                <option value="">
+                    All Drivers
+                </option>
+
+                {% for d in drivers %}
+
+                <option
+                    value="{{ d.id }}"
+                    {% if driver_filter == d.id|stringformat:"i" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ d.full_name }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div
+            class="filter-item"
+            style="max-width:140px;"
+        >
+
+            <input
+                type="date"
+                name="from_date"
+                value="{{ from_date }}"
+                class="form-control form-control-sm"
+                title="From Date"
+            >
+
+        </div>
+
+
+        <div
+            class="filter-item"
+            style="max-width:140px;"
+        >
+
+            <input
+                type="date"
+                name="to_date"
+                value="{{ to_date }}"
+                class="form-control form-control-sm"
+                title="To Date"
+            >
+
+        </div>
+
+
+        <div class="filter-actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+            >
+
+                <i class="bi bi-funnel me-1"></i>
+
+                Filter
+
+            </button>
+
+
+            {% if search_query or vehicle_filter or driver_filter or from_date or to_date %}
+
+            <a
+                href="{% url 'trips:list' %}"
+                class="btn btn-secondary btn-sm"
+            >
+                Reset
+            </a>
+
+            {% endif %}
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =========================================================
+     LEDGER TABLE
+========================================================= -->
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <div class="card-title">
+
+            <i class="bi bi-journal-text text-primary"></i>
+
+            Ledger Records
+            ({{ page_obj.paginator.count }})
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table-custom table-ledger">
+
+            <thead>
+
+                <tr>
+
+                    <th class="ledger-date-column">Date</th>
+                    <th>Ref No.</th>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Owner</th>
+                    <th class="text-center">
+                        KM (Start/End)
+                    </th>
+                    <th class="text-end">
+                        Total KM
+                    </th>
+                    <th class="text-end">
+                        Fuel Cost
+                    </th>
+                    <th class="text-end">
+                        Income
+                    </th>
+                    <th class="text-end">
+                        Total Expense
+                    </th>
+                    <th class="text-end">
+                        Net Profit
+                    </th>
+                    <th class="text-center">
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for trip in page_obj %}
+
+                <tr>
+
+                    <td class="ledger-date-column">
+
+                        <div class="fw-bold text-primary-dark">
+
+                            {{ trip.created_at|date:"d M Y" }}
+
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge-custom badge-secondary">
+
+                            {{ trip.trip_ref_no }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge-custom badge-primary">
+
+                            {{ trip.vehicle.vehicle_number }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <div class="fw-semibold text-secondary">
+
+                            {{ trip.primary_driver.full_name|default:"-" }}
+
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="text-secondary small">
+
+                            {{ trip.vehicle.owner_name|default:"—" }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td class="text-center small text-muted font-monospace">
+
+                        {% if trip.km_detail %}
+
+                            {{ trip.km_detail.start_km|floatformat:0 }}
+
+                            &rarr;
+
+                            {{ trip.km_detail.end_km|floatformat:0 }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td class="text-end fw-bold">
+
+                        {{ trip.total_km }}
+
+                    </td>
+
+
+                    <td class="text-end">
+
+                        <div class="fw-semibold text-secondary">
+
+                            ₹{{ trip.total_fuel_cost|floatformat:2 }}
+
+                        </div>
+
+                        <small class="text-muted">
+
+                            {{ trip.total_fuel_quantity|floatformat:1 }} L
+
+                        </small>
+
+                    </td>
+
+
+                    <td class="text-end text-primary fw-bold">
+
+                        ₹{{ trip.total_income|floatformat:2 }}
+
+                    </td>
+
+
+                    <td class="text-end text-danger fw-bold">
+
+                        ₹{{ trip.overall_expense|floatformat:2 }}
+
+                    </td>
+
+
+                    <td class="text-end">
+
+                        <span
+                            class="badge-custom
+                            {% if trip.net_income >= 0 %}
+                                badge-active
+                            {% else %}
+                                badge-danger
+                            {% endif %}"
+                        >
+
+                            ₹{{ trip.net_income|floatformat:2 }}
+
+                        </span>
+
+                    </td>
+
+
+                    <!-- =================================================
+                         ACTION BUTTON
+                    ================================================== -->
+
+                    <td class="text-center">
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-sm btn-icon trip-action-btn"
+                            data-trip-id="{{ trip.pk }}"
+                            aria-label="Trip actions"
+                        >
+
+                            <i class="bi bi-three-dots-vertical"></i>
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="11">
+
+                        <div class="table-empty-state">
+
+                            <div class="empty-icon">
+
+                                <i class="bi bi-journal-x"></i>
+
+                            </div>
+
+                            <h6 class="empty-title">
+
+                                No Trip Ledger Records Found
+
+                            </h6>
+
+                            <p class="empty-desc">
+
+                                No entries match your search criteria.
+                                Create a new vehicle trip record to log
+                                miles, fuel, income and expenses.
+
+                            </p>
+
+                            <a
+                                href="{% url 'trips:create' %}"
+                                class="btn btn-primary fw-bold"
+                            >
+
+                                <i class="bi bi-plus-lg me-1"></i>
+
+                                Create New Trip Entry
+
+                            </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- =========================================================
+         PAGINATION
+    ========================================================= -->
+
+    {% if page_obj.has_other_pages %}
+
+    <div class="card-footer">
+
+        <div class="pagination-wrapper">
+
+            <span class="pagination-info">
+
+                Showing
+                {{ page_obj.start_index }}
+                to
+                {{ page_obj.end_index }}
+                of
+                {{ page_obj.paginator.count }}
+                trip ledger records
+
+            </span>
+
+
+            <ul class="pagination-custom">
+
+                {% if page_obj.has_previous %}
+
+                <li class="page-item">
+
+                    <a
+                        class="page-link"
+                        href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&vehicle={{ vehicle_filter }}&driver={{ driver_filter }}&from_date={{ from_date }}&to_date={{ to_date }}"
+                    >
+                        Previous
+                    </a>
+
+                </li>
+
+                {% else %}
+
+                <li class="page-item disabled">
+
+                    <span class="page-link">
+                        Previous
+                    </span>
+
+                </li>
+
+                {% endif %}
+
+
+                {% for p in page_obj.paginator.page_range %}
+
+                    {% if p == page_obj.number %}
+
+                    <li class="page-item active">
+
+                        <span class="page-link">
+                            {{ p }}
+                        </span>
+
+                    </li>
+
+                    {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+
+                    <li class="page-item">
+
+                        <a
+                            class="page-link"
+                            href="?page={{ p }}&q={{ search_query }}&vehicle={{ vehicle_filter }}&driver={{ driver_filter }}&from_date={{ from_date }}&to_date={{ to_date }}"
+                        >
+                            {{ p }}
+                        </a>
+
+                    </li>
+
+                    {% endif %}
+
+                {% endfor %}
+
+
+                {% if page_obj.has_next %}
+
+                <li class="page-item">
+
+                    <a
+                        class="page-link"
+                        href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&vehicle={{ vehicle_filter }}&driver={{ driver_filter }}&from_date={{ from_date }}&to_date={{ to_date }}"
+                    >
+                        Next
+                    </a>
+
+                </li>
+
+                {% else %}
+
+                <li class="page-item disabled">
+
+                    <span class="page-link">
+                        Next
+                    </span>
+
+                </li>
+
+                {% endif %}
+
+            </ul>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =========================================================
+     ACTION POPUP JAVASCRIPT
+========================================================= -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    let activePopup = null;
+    let activeButton = null;
+
+
+    function closeActionPopup() {
+
+        if (activePopup) {
+
+            activePopup.remove();
+
+            activePopup = null;
+
+        }
+
+        activeButton = null;
+
+    }
+
+
+    function createActionPopup(button) {
+
+        closeActionPopup();
+
+
+        const tripId =
+            button.getAttribute('data-trip-id');
+
+
+        if (!tripId) {
+
+            console.error(
+                'Trip ID not found.'
+            );
+
+            return;
+
+        }
+
+
+        const popup =
+            document.createElement('div');
+
+
+        popup.className =
+            'trip-action-popup';
+
+
+        popup.innerHTML = `
+
+            <a
+                class="action-item view-action"
+                href="/trips/${tripId}/"
+            >
+
+                <i class="bi bi-eye"></i>
+
+                <span>
+                    View Details
+                </span>
+
+            </a>
+
+
+            <a
+                class="action-item edit-action"
+                href="/trips/${tripId}/edit/"
+            >
+
+                <i class="bi bi-pencil"></i>
+
+                <span>
+                    Edit Trip
+                </span>
+
+            </a>
+
+
+            <div class="action-divider"></div>
+
+
+            <button
+                type="button"
+                class="action-item delete-action"
+            >
+
+                <i class="bi bi-trash"></i>
+
+                <span>
+                    Delete Trip
+                </span>
+
+            </button>
+
+        `;
+
+
+        document.body.appendChild(popup);
+
+
+        const rect =
+            button.getBoundingClientRect();
+
+
+        const popupWidth = 190;
+
+        const popupHeight =
+            popup.offsetHeight;
+
+
+        let left =
+            rect.right - popupWidth;
+
+
+        let top =
+            rect.bottom + 8;
+
+
+        if (
+            left < 8
+        ) {
+
+            left = 8;
+
+        }
+
+
+        if (
+            left + popupWidth
+            > window.innerWidth - 8
+        ) {
+
+            left =
+                window.innerWidth
+                - popupWidth
+                - 8;
+
+        }
+
+
+        if (
+            top + popupHeight
+            > window.innerHeight - 8
+        ) {
+
+            top =
+                rect.top
+                - popupHeight
+                - 8;
+
+        }
+
+
+        if (top < 8) {
+
+            top = 8;
+
+        }
+
+
+        popup.style.left =
+            left + 'px';
+
+        popup.style.top =
+            top + 'px';
+
+
+        popup.classList.add('show');
+
+
+        activePopup = popup;
+
+        activeButton = button;
+
+
+        const deleteButton =
+            popup.querySelector(
+                '.delete-action'
+            );
+
+
+        if (deleteButton) {
+
+            deleteButton.addEventListener(
+                'click',
+                function () {
+
+                    const deleteUrl =
+                        `/trips/${tripId}/delete/`;
+
+
+                    closeActionPopup();
+
+
+                    const deleteModal =
+                        document.getElementById(
+                            'deleteModal'
+                        );
+
+
+                    if (
+                        deleteModal
+                        && typeof bootstrap !== 'undefined'
+                    ) {
+
+                        deleteModal.dataset.deleteUrl =
+                            deleteUrl;
+                        deleteModal.dataset.deleteName =
+                            'this trip';
+
+
+                        const modal =
+                            bootstrap.Modal
+                            .getOrCreateInstance(
+                                deleteModal
+                            );
+
+
+                        modal.show();
+
+                    } else {
+
+                        console.error(
+                            'deleteModal not found.'
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+    }
+
+
+    document.addEventListener(
+        'click',
+        function (event) {
+
+            const button =
+                event.target.closest(
+                    '.trip-action-btn'
+                );
+
+
+            if (!button) {
+
+                return;
+
+            }
+
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            if (
+                activeButton === button
+                && activePopup
+            ) {
+
+                closeActionPopup();
+
+                return;
+
+            }
+
+
+            createActionPopup(button);
+
+        }
+    );
+
+
+    document.addEventListener(
+        'click',
+        function (event) {
+
+            if (
+                activePopup
+                && !activePopup.contains(
+                    event.target
+                )
+                && !event.target.closest(
+                    '.trip-action-btn'
+                )
+            ) {
+
+                closeActionPopup();
+
+            }
+
+        }
+    );
+
+
+    document.addEventListener(
+        'keydown',
+        function (event) {
+
+            if (
+                event.key === 'Escape'
+            ) {
+
+                closeActionPopup();
+
+            }
+
+        }
+    );
+
+
+    window.addEventListener(
+        'scroll',
+        function () {
+
+            closeActionPopup();
+
+        },
+        true
+    );
+
+
+    window.addEventListener(
+        'resize',
+        function () {
+
+            closeActionPopup();
+
+        }
+    );
+
+});
+</script>
+
+{% endblock %}

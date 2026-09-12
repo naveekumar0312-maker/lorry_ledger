@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Profile - {{ driver.full_name }} - Vehicle Ledger{% endblock %}
+{% block header_title %}Driver Profile{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'drivers:list' %}">Drivers</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ driver.full_name }}</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-3">
+            <div class="driver-avatar-circle" style="width: 44px; height: 44px; font-size: 1.15rem;">
+                {{ driver.full_name|make_list|first|upper }}
+            </div>
+            <div>
+                <h1 class="page-title mb-0">{{ driver.full_name }}</h1>
+                <p class="page-subtitle mb-0"><i class="bi bi-telephone me-1"></i>{{ driver.mobile_number }} &bull; License: {{ driver.license_number|default:"Not recorded" }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'drivers:edit' driver.pk %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-pencil-square me-1"></i> Edit Driver
+        </a>
+        <button type="button" class="btn btn-outline-danger"
+            data-bs-toggle="modal" data-bs-target="#deleteModal"
+            data-delete-url="{% url 'drivers:delete' driver.pk %}"
+            data-delete-name="Driver {{ driver.full_name }}">
+            <i class="bi bi-trash me-1"></i> Delete
+        </button>
+        <a href="{% url 'drivers:list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Driver Info Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-md-6">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-person-lines-fill text-primary"></i> Personal Credentials
+                </div>
+                <div class="card-actions">
+                    {% if driver.status == 'ACTIVE' %}
+                    <span class="badge-custom badge-active"><span class="badge-indicator"></span> Active</span>
+                    {% elif driver.status == 'ON_LEAVE' %}
+                    <span class="badge-custom badge-pending"><span class="badge-indicator"></span> On Leave</span>
+                    {% else %}
+                    <span class="badge-custom badge-inactive"><span class="badge-indicator"></span> Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <table class="table-custom">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted w-40"><i class="bi bi-person me-2"></i>Full Name</td>
+                            <td class="fw-bold text-primary-dark">{{ driver.full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-telephone me-2"></i>Phone Number</td>
+                            <td class="fw-semibold">{{ driver.mobile_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-card-heading me-2"></i>Driving License</td>
+                            <td><span class="badge-custom badge-secondary">{{ driver.license_number|default:"—" }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-geo-alt me-2"></i>Address</td>
+                            <td>{{ driver.address|default:"—" }}</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <div class="app-card h-100">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-speedometer2 text-primary"></i> Operational Track Record
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-4">
+                <div class="kpi-icon-box kpi-primary mb-3" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <h2 class="display-5 fw-extrabold text-primary mb-1">{{ trip_count }}</h2>
+                <div class="fw-bold text-primary-dark mb-1">Total Trips Completed</div>
+                <small class="text-muted">Recorded as Primary Fleet Driver</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Trips by Driver -->
+<div class="app-card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="bi bi-journal-text text-primary"></i> Recent Trips Driven
+        </div>
+        <div class="card-actions">
+            <a href="{% url 'ledger:index' %}?driver={{ driver.pk }}" class="btn btn-secondary btn-sm">
+                View in Ledger <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Trip Ref</th>
+                    <th>Vehicle</th>
+                    <th>Route</th>
+                    <th class="text-end">Net Profit</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in primary_trips %}
+                <tr>
+                    <td class="fw-semibold">{{ trip.entry_date|date:"d M Y" }}</td>
+                    <td><span class="badge-custom badge-secondary">{{ trip.trip_ref_no }}</span></td>
+                    <td><span class="badge-custom badge-primary">{{ trip.vehicle.vehicle_number }}</span></td>
+                    <td>
+                        <span class="text-muted small">{{ trip.period_from|date:"d M Y" }} &rarr; {{ trip.period_to|date:"d M Y" }}</span>
+                    </td>
+                    <td class="text-end">
+                        <span class="badge-custom {% if trip.net_income >= 0 %}badge-active{% else %}badge-danger{% endif %}">
+                            ₹{{ trip.net_income|floatformat:2 }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'trips:detail' trip.pk %}" class="btn btn-secondary btn-sm btn-icon" title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="table-empty-state">
+                            <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                            <h6 class="empty-title">No Trips Recorded Yet</h6>
+                            <p class="empty-desc">This driver has not been assigned to any vehicle trip records yet.</p>
+                            <a href="{% url 'trips:create' %}" class="btn btn-primary fw-bold">
+                                <i class="bi bi-plus-lg me-1"></i> Create Trip
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

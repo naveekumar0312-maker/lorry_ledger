@@ -1,0 +1,168 @@
+<form
+    method="post"
+    action="{% url 'trips:fuel_edit' fuel.id %}"
+    class="edit-modal-form"
+>
+    {% csrf_token %}
+
+    {% if errors %}
+        <div class="alert alert-danger mb-3">
+            <strong>Please fix the following:</strong>
+
+            <ul class="mb-0 mt-2">
+                {% for field, message in errors.items %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="row g-3">
+
+        <!-- Fuel Type -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Fuel Type
+            </label>
+
+            <select
+                name="fuel_type"
+                class="form-select"
+                required
+            >
+                <option value="">Select Fuel Type</option>
+
+                <option
+                    value="Diesel"
+                    {% if fuel.fuel_type == 'Diesel' %}selected{% endif %}
+                >
+                    Diesel
+                </option>
+
+                <option
+                    value="AdBlue"
+                    {% if fuel.fuel_type == 'AdBlue' %}selected{% endif %}
+                >
+                    AdBlue
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- Date -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Date
+            </label>
+
+            <input
+                type="date"
+                name="fuel_date"
+                class="form-control"
+                value="{% if fuel.fuel_date %}{{ fuel.fuel_date|date:'Y-m-d' }}{% endif %}"
+            >
+
+        </div>
+
+
+        <!-- Quantity -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Quantity
+            </label>
+
+            <div class="input-group">
+
+                <input
+                    type="number"
+                    name="quantity"
+                    class="form-control"
+                    step="0.001"
+                    min="0"
+                    value="{{ fuel.quantity|default:'0' }}"
+                    required
+                >
+
+                <span class="input-group-text">
+                    L
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- Rate -->
+        <div class="col-12 col-md-6">
+
+            <label class="form-label fw-semibold">
+                Rate / Litre
+            </label>
+
+            <div class="input-group">
+
+                <span class="input-group-text">
+                    ₹
+                </span>
+
+                <input
+                    type="number"
+                    name="rate"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ fuel.rate_per_litre|default:'0.00' }}"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Station -->
+        <div class="col-12">
+
+            <label class="form-label fw-semibold">
+                Fuel Station
+            </label>
+
+            <input
+                type="text"
+                name="station"
+                class="form-control"
+                value="{{ fuel.station_name|default:'' }}"
+                placeholder="Enter fuel station"
+            >
+
+        </div>
+
+    </div>
+
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+
+        <button
+            type="button"
+            class="btn btn-light border"
+            data-bs-dismiss="modal"
+        >
+            Cancel
+        </button>
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-check2-circle me-1"></i>
+            Save Changes
+        </button>
+
+    </div>
+
+</form>

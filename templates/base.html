@@ -1,0 +1,1300 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}Vehicle Trip, Fuel & Expense Ledger{% endblock %}
+        | Vehicle Ledger
+    </title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚛</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap 5 -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Main CSS -->
+    <link
+        rel="stylesheet"
+        href="{% static 'css/main.css' %}"
+    >
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+<div class="app-wrapper">
+
+    <!-- =========================================================
+         DESKTOP SIDEBAR
+         ========================================================= -->
+
+    <aside class="app-sidebar" id="appSidebar">
+
+        <!-- Brand -->
+        <div class="sidebar-header">
+
+            <a
+                href="{% url 'dashboard:index' %}"
+                class="brand-logo"
+            >
+
+                <div class="brand-icon-box">
+                    <i class="bi bi-truck"></i>
+                </div>
+
+                <div class="brand-text">
+
+                    <span class="brand-title">
+                        LORRY LEDGER
+                    </span>
+
+                    <span class="brand-subtitle">
+                        Fleet & Accounting
+                    </span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+
+        <!-- Sidebar Body -->
+        <div class="sidebar-body">
+
+            <!-- =================================================
+                 MAIN
+                 ================================================= -->
+
+            <div class="nav-section-title">
+                MAIN
+            </div>
+
+            <ul class="sidebar-nav">
+
+                <!-- Dashboard -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}"
+                        href="{% url 'dashboard:index' %}"
+                    >
+
+                        <i class="bi bi-grid-1x2"></i>
+
+                        <span>
+                            Dashboard
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- Ledger -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'ledger' %}active{% endif %}"
+                        href="{% url 'ledger:index' %}"
+                    >
+
+                        <i class="bi bi-journal-text"></i>
+
+                        <span>
+                            Ledger
+                        </span>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+
+            <!-- =================================================
+                 OPERATIONS
+                 ================================================= -->
+
+            <div class="nav-section-title">
+                OPERATIONS
+            </div>
+
+            <ul class="sidebar-nav">
+
+                <!-- New Trip -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link nav-link-highlight {% if request.resolver_match.app_name == 'trips' and request.resolver_match.url_name == 'create' %}active{% endif %}"
+                        href="{% url 'trips:create' %}"
+                    >
+
+                        <i class="bi bi-plus-circle-fill text-primary"></i>
+
+                        <span>
+                            New Trip
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- Vehicles -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'vehicles' and 'document' not in request.resolver_match.url_name %}active{% endif %}"
+                        href="{% url 'vehicles:list' %}"
+                    >
+
+                        <i class="bi bi-truck-flatbed"></i>
+
+                        <span>
+                            Vehicles
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- Vehicle Documents -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'vehicles' and 'document' in request.resolver_match.url_name %}active{% endif %}"
+                        href="{% url 'vehicles:document_list' %}"
+                    >
+
+                        <i class="bi bi-file-earmark-text"></i>
+
+                        <span>
+                            Vehicle Documents
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- Drivers -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'drivers' %}active{% endif %}"
+                        href="{% url 'drivers:list' %}"
+                    >
+
+                        <i class="bi bi-person-badge"></i>
+
+                        <span>
+                            Drivers
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- Fuel Logbook -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'fuel' %}active{% endif %}"
+                        href="{% url 'fuel:index' %}"
+                    >
+
+                        <i class="bi bi-fuel-pump"></i>
+
+                        <span>
+                            Fuel Logbook
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+
+
+            </ul>
+
+
+            <!-- =================================================
+                 REPORTS & ANALYTICS
+                 ================================================= -->
+
+            <div class="nav-section-title">
+                REPORTS & ANALYTICS
+            </div>
+
+            <ul class="sidebar-nav">
+
+                <!-- Reports -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}"
+                        href="{% url 'reports:index' %}"
+                    >
+
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+
+                        <span>
+                            Reports & Summary
+                        </span>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+
+            <!-- =================================================
+                 CONFIGURATION
+                 ================================================= -->
+
+            <div class="nav-section-title">
+                CONFIGURATION
+            </div>
+
+            <ul class="sidebar-nav">
+
+                <!-- Profile -->
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% if request.resolver_match.app_name == 'accounts' and 'profile' in request.resolver_match.url_name %}active{% endif %}"
+                        href="{% url 'accounts:profile' %}"
+                    >
+
+                        <i class="bi bi-person-gear"></i>
+
+                        <span>
+                            Profile Settings
+                        </span>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================================================
+         MOBILE OFFCANVAS SIDEBAR
+         ========================================================= -->
+
+    <div
+        class="offcanvas offcanvas-start offcanvas-sidebar"
+        tabindex="-1"
+        id="mobileSidebar"
+        aria-labelledby="mobileSidebarLabel"
+    >
+
+        <!-- Mobile Header -->
+        <div class="offcanvas-header">
+
+            <a
+                href="{% url 'dashboard:index' %}"
+                class="brand-logo text-white d-flex align-items-center gap-2 text-decoration-none"
+            >
+
+                <div
+                    class="brand-icon-box"
+                    style="
+                        width:34px;
+                        height:34px;
+                        border-radius:8px;
+                        background:#6F4E37;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        color:#fff;
+                    "
+                >
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+                <div class="brand-text">
+
+                    <span class="fw-bold text-white fs-6">
+                        LORRY LEDGER
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="offcanvas"
+                aria-label="Close"
+            ></button>
+
+        </div>
+
+
+        <!-- Mobile Body -->
+        <div class="offcanvas-body">
+
+            <!-- =================================================
+                 MAIN
+                 ================================================= -->
+
+            <div class="nav-section-title">
+                MAIN
+            </div>
+
+
+            <!-- Dashboard -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}"
+                href="{% url 'dashboard:index' %}"
+            >
+
+                <i class="bi bi-grid-1x2"></i>
+
+                <span>
+                    Dashboard
+                </span>
+
+            </a>
+
+
+            <!-- Ledger -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'ledger' %}active{% endif %}"
+                href="{% url 'ledger:index' %}"
+            >
+
+                <i class="bi bi-journal-text"></i>
+
+                <span>
+                    Ledger
+                </span>
+
+            </a>
+
+
+            <!-- =================================================
+                 OPERATIONS
+                 ================================================= -->
+
+            <div class="nav-section-title mt-3">
+                OPERATIONS
+            </div>
+
+
+            <!-- New Trip -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'trips' and request.resolver_match.url_name == 'create' %}active{% endif %}"
+                href="{% url 'trips:create' %}"
+                style="
+                    background:rgba(111, 78, 55,0.18);
+                    color:#fff;
+                "
+            >
+
+                <i class="bi bi-plus-circle-fill text-primary"></i>
+
+                <span>
+                    New Trip
+                </span>
+
+            </a>
+
+
+            <!-- Vehicles -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'vehicles' and 'document' not in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'vehicles:list' %}"
+            >
+
+                <i class="bi bi-truck-flatbed"></i>
+
+                <span>
+                    Vehicles
+                </span>
+
+            </a>
+
+
+            <!-- Vehicle Documents -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'vehicles' and 'document' in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'vehicles:document_list' %}"
+            >
+
+                <i class="bi bi-file-earmark-text"></i>
+
+                <span>
+                    Vehicle Documents
+                </span>
+
+            </a>
+
+
+            <!-- Drivers -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'drivers' %}active{% endif %}"
+                href="{% url 'drivers:list' %}"
+            >
+
+                <i class="bi bi-person-badge"></i>
+
+                <span>
+                    Drivers
+                </span>
+
+            </a>
+
+
+            <!-- Fuel Logbook -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'fuel' %}active{% endif %}"
+                href="{% url 'fuel:index' %}"
+            >
+
+                <i class="bi bi-fuel-pump"></i>
+
+                <span>
+                    Fuel Logbook
+                </span>
+
+            </a>
+
+
+
+            <!-- =================================================
+                 REPORTS & ANALYTICS
+                 ================================================= -->
+
+            <div class="nav-section-title mt-3">
+                REPORTS & ANALYTICS
+            </div>
+
+
+            <!-- Reports -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}"
+                href="{% url 'reports:index' %}"
+            >
+
+                <i class="bi bi-file-earmark-bar-graph"></i>
+
+                <span>
+                    Reports & Summary
+                </span>
+
+            </a>
+
+
+            <!-- =================================================
+                 CONFIGURATION
+                 ================================================= -->
+
+            <div class="nav-section-title mt-3">
+                CONFIGURATION
+            </div>
+
+
+            <!-- Profile -->
+            <a
+                class="nav-link {% if request.resolver_match.app_name == 'accounts' and 'profile' in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'accounts:profile' %}"
+            >
+
+                <i class="bi bi-person-gear"></i>
+
+                <span>
+                    Profile Settings
+                </span>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         MAIN CONTENT WRAPPER
+         ========================================================= -->
+
+    <div
+        class="main-wrapper"
+        id="mainWrapper"
+    >
+
+        <!-- =====================================================
+             TOP HEADER
+             ===================================================== -->
+
+        <header class="app-header">
+
+            <div class="header-left">
+
+                <!-- Mobile Menu Button -->
+                <button
+                    class="sidebar-toggle-btn d-lg-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#mobileSidebar"
+                    aria-label="Toggle navigation"
+                >
+
+                    <i class="bi bi-list"></i>
+
+                </button>
+
+
+                <!-- Breadcrumb -->
+                <div class="header-breadcrumb d-none d-sm-flex">
+
+                    <span>
+                        Vehicle Ledger
+                    </span>
+
+                    <i
+                        class="bi bi-chevron-right text-muted"
+                        style="font-size:0.7rem;"
+                    ></i>
+
+                    <span class="active-page">
+
+                        {% block header_title %}
+                            Dashboard
+                        {% endblock %}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 HEADER RIGHT
+                 ================================================= -->
+
+            <div class="header-right">
+
+                <!-- Search -->
+                <div class="header-search">
+
+                    <i class="bi bi-search"></i>
+
+                    <input
+                        type="text"
+                        placeholder="Search trips, vehicles..."
+                        id="globalSearchInput"
+                        aria-label="Quick search"
+                    >
+
+                </div>
+
+
+                <!-- New Trip -->
+                <a
+                    href="{% url 'trips:create' %}"
+                    class="btn btn-primary btn-sm d-none d-md-inline-flex"
+                >
+
+                    <i class="bi bi-plus-lg"></i>
+
+                    <span>
+                        New Trip
+                    </span>
+
+                </a>
+
+
+                <!-- User -->
+                {% if user.is_authenticated %}
+
+                <div class="user-profile-dropdown dropdown">
+
+                    <button
+                        class="user-profile-btn"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                    >
+
+                        <div class="user-avatar">
+
+                            {{ user.username|make_list|first|upper }}
+
+                        </div>
+
+
+                        <div class="user-info">
+
+                            <span class="user-name">
+                                {{ user.username }}
+                            </span>
+
+                            <span class="user-role">
+
+                                {% if user.is_superuser %}
+                                    Admin
+                                {% else %}
+                                    Manager
+                                {% endif %}
+
+                            </span>
+
+                        </div>
+
+
+                        <i class="bi bi-chevron-down ms-1"></i>
+
+                    </button>
+
+
+                    <ul class="dropdown-menu dropdown-menu-end">
+
+                        <!-- User Info -->
+                        <li>
+
+                            <div class="px-3 py-2 border-bottom mb-1">
+
+                                <p
+                                    class="mb-0 fw-bold text-primary-dark"
+                                    style="font-size:0.85rem;"
+                                >
+                                    {{ user.username }}
+                                </p>
+
+                                <small class="text-muted">
+                                    {{ user.email|default:"Active Account" }}
+                                </small>
+
+                            </div>
+
+                        </li>
+
+
+                        <!-- Profile -->
+                        <li>
+
+                            <a
+                                class="dropdown-item"
+                                href="{% url 'accounts:profile' %}"
+                            >
+
+                                <i class="bi bi-person text-muted"></i>
+
+                                Profile Settings
+
+                            </a>
+
+                        </li>
+
+
+                        <!-- Change Password -->
+                        <li>
+
+                            <a
+                                class="dropdown-item"
+                                href="{% url 'accounts:change_password' %}"
+                            >
+
+                                <i class="bi bi-shield-lock text-muted"></i>
+
+                                Change Password
+
+                            </a>
+
+                        </li>
+
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+
+                        <!-- Logout -->
+                        <li>
+
+                            <a
+                                class="dropdown-item text-danger"
+                                href="{% url 'accounts:logout' %}"
+                            >
+
+                                <i class="bi bi-box-arrow-right"></i>
+
+                                Sign Out
+
+                            </a>
+
+                        </li>
+
+                    </ul>
+
+                </div>
+
+                {% else %}
+
+                <a
+                    href="{% url 'accounts:login' %}"
+                    class="btn btn-primary btn-sm"
+                >
+                    Sign In
+                </a>
+
+                {% endif %}
+
+            </div>
+
+        </header>
+
+
+        <!-- =====================================================
+             MAIN WORKSPACE
+             ===================================================== -->
+
+        <main class="main-content">
+
+            <!-- Alert Messages -->
+            {% if messages %}
+
+            <div class="mb-3">
+
+                {% for message in messages %}
+
+                <div
+                    class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show"
+                    role="alert"
+                >
+
+                    <i
+                        class="bi bi-{% if message.tags == 'success' %}check-circle-fill text-success{% elif message.tags == 'error' %}exclamation-octagon-fill text-danger{% elif message.tags == 'warning' %}exclamation-triangle-fill text-warning{% else %}info-circle-fill text-info{% endif %}"
+                    ></i>
+
+                    <div class="flex-grow-1">
+                        {{ message }}
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                    ></button>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- Page Content -->
+            {% block content %}{% endblock %}
+
+        </main>
+
+
+        <!-- =====================================================
+             FOOTER
+             ===================================================== -->
+
+        <footer class="app-footer">
+
+            <div>
+
+                <span>
+                    Vehicle Ledger SaaS &copy; 2026.
+                    All rights reserved.
+                </span>
+
+            </div>
+
+
+            <div>
+
+                <span class="badge-custom badge-active">
+
+                    <span class="badge-indicator"></span>
+
+                    Production Online
+
+                </span>
+
+            </div>
+
+        </footer>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     GLOBAL DELETE CONFIRMATION MODAL
+     ============================================================ -->
+
+<div
+    class="modal fade modal-confirm-delete"
+    id="deleteModal"
+    tabindex="-1"
+    aria-labelledby="deleteModalLabel"
+    aria-hidden="true"
+>
+
+    <div
+        class="modal-dialog modal-dialog-centered"
+        style="max-width:440px;"
+    >
+
+        <div class="modal-content">
+
+            <!-- Header -->
+            <div class="modal-header border-0 pb-0 justify-content-end">
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+
+            </div>
+
+
+            <!-- Body -->
+            <div class="modal-body pt-0">
+
+                <div class="delete-icon-box">
+
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                </div>
+
+
+                <h5
+                    class="delete-title"
+                    id="deleteModalLabel"
+                >
+                    Confirm Deletion
+                </h5>
+
+
+                <p class="text-muted mb-2">
+
+                    Are you sure you want to delete
+
+                    <span
+                        class="delete-item-name"
+                        id="deleteModalItemName"
+                    >
+                        this record
+                    </span>?
+
+                    This action cannot be undone.
+
+                </p>
+
+
+                <div
+                    class="alert alert-warning py-2 small mb-0 d-none text-start"
+                    id="deleteModalWarning"
+                >
+
+                    <i class="bi bi-info-circle me-1"></i>
+
+                    <span id="deleteModalWarningText"></span>
+
+                </div>
+
+            </div>
+
+
+            <!-- Footer -->
+            <div
+                class="modal-footer border-0 pt-0 justify-content-center pb-4"
+            >
+
+                <form
+                    method="post"
+                    id="deleteModalForm"
+                    action=""
+                    class="d-flex gap-2"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary px-3"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger px-4 fw-semibold"
+                    >
+
+                        <i class="bi bi-trash-fill me-1"></i>
+
+                        Delete Permanently
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     GLOBAL TOAST NOTIFICATIONS
+     ============================================================ -->
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+        <div
+            class="toast align-items-center border-0 show shadow-lg
+            {% if message.tags == 'success' %}
+                bg-white border-start border-4 border-success
+            {% elif message.tags == 'error' %}
+                bg-white border-start border-4 border-danger
+            {% elif message.tags == 'warning' %}
+                bg-white border-start border-4 border-warning
+            {% else %}
+                bg-white border-start border-4 border-info
+            {% endif %}"
+            role="alert"
+            data-bs-autohide="true"
+            data-bs-delay="4500"
+        >
+
+            <div class="d-flex">
+
+                <div class="toast-body fw-medium text-dark">
+
+                    <i
+                        class="bi bi-{% if message.tags == 'success' %}check-circle-fill text-success{% elif message.tags == 'error' %}x-circle-fill text-danger{% elif message.tags == 'warning' %}exclamation-triangle-fill text-warning{% else %}info-circle-fill text-info{% endif %} me-2"
+                    ></i>
+
+                    {{ message }}
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn-close me-2 m-auto"
+                    data-bs-dismiss="toast"
+                    aria-label="Close"
+                ></button>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+</div>
+
+
+<!-- ============================================================
+     BOOTSTRAP JS
+     ============================================================ -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+></script>
+
+
+<!-- ============================================================
+     GLOBAL JAVASCRIPT
+     ============================================================ -->
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+
+        /* ======================================================
+           DELETE MODAL
+           ====================================================== */
+
+        const deleteModal =
+            document.getElementById('deleteModal');
+
+
+        if (deleteModal) {
+
+            deleteModal.addEventListener(
+                'show.bs.modal',
+                function (event) {
+
+                    const trigger =
+                        event.relatedTarget;
+
+                    let url, name, warning;
+
+                    if (trigger) {
+                        url = trigger.getAttribute('data-delete-url');
+                        name = trigger.getAttribute('data-delete-name') || 'this record';
+                        warning = trigger.getAttribute('data-delete-warning') || '';
+                    } else if (deleteModal.dataset.deleteUrl) {
+                        url = deleteModal.dataset.deleteUrl;
+                        name = deleteModal.dataset.deleteName || 'this record';
+                        warning = deleteModal.dataset.deleteWarning || '';
+                    } else {
+                        return;
+                    }
+
+
+                    const form =
+                        document.getElementById(
+                            'deleteModalForm'
+                        );
+
+
+                    if (form && url) {
+
+                        form.action = url;
+
+                    }
+
+
+                    const itemName =
+                        document.getElementById(
+                            'deleteModalItemName'
+                        );
+
+
+                    if (itemName) {
+
+                        itemName.textContent =
+                            name;
+
+                    }
+
+
+                    const warningEl =
+                        document.getElementById(
+                            'deleteModalWarning'
+                        );
+
+
+                    const warningText =
+                        document.getElementById(
+                            'deleteModalWarningText'
+                        );
+
+
+                    if (
+                        warningEl &&
+                        warningText
+                    ) {
+
+                        if (warning) {
+
+                            warningEl.classList.remove(
+                                'd-none'
+                            );
+
+                            warningText.textContent =
+                                warning;
+
+                        } else {
+
+                            warningEl.classList.add(
+                                'd-none'
+                            );
+
+                            warningText.textContent =
+                                '';
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           TOAST INITIALIZATION
+           ====================================================== */
+
+        document
+            .querySelectorAll('.toast')
+            .forEach(
+                function (toastEl) {
+
+                    const toast =
+                        new bootstrap.Toast(
+                            toastEl
+                        );
+
+                    toast.show();
+
+                }
+            );
+
+
+        /* ======================================================
+           TOOLTIP INITIALIZATION
+           ====================================================== */
+
+        const tooltipTriggerList =
+            [].slice.call(
+                document.querySelectorAll(
+                    '[data-bs-toggle="tooltip"]'
+                )
+            );
+
+
+        tooltipTriggerList.map(
+            function (tooltipTriggerEl) {
+
+                return new bootstrap.Tooltip(
+                    tooltipTriggerEl
+                );
+
+            }
+        );
+
+    }
+);
+
+</script>
+
+<!-- ============================================================
+     DOCUMENT REMINDER POPUP LOGIC
+     ============================================================ -->
+{% if popup_reminders %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const remindersQueue = JSON.parse('{{ popup_reminders|escapejs }}');
+    const toastContainer = document.querySelector('.toast-container');
+    
+    // Create an audio object
+    const notificationSound = new Audio("{% static 'sounds/notification.wav' %}");
+    
+    function processNextReminder() {
+        if (remindersQueue.length === 0) return;
+        
+        const reminder = remindersQueue.shift();
+        
+        // Build the toast HTML safely
+        const toastHTML = `
+        <div class="toast align-items-center border-0 bg-white border-start border-4 border-${reminder.severity} shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+            <div class="toast-header border-0 bg-transparent pb-0">
+                <strong class="me-auto text-${reminder.severity}">${reminder.icon} ${reminder.title}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body pt-1">
+                <div class="fw-bold mb-1">Vehicle: ${reminder.vehicle}</div>
+                <div class="small">
+                    Document: ${reminder.document_type}<br>
+                    Expiry: ${reminder.expiry_date}<br>
+                    <span class="fw-bold text-${reminder.severity}">${reminder.days_remaining > 0 ? 'Expires in ' + reminder.days_remaining + ' days' : (reminder.days_remaining === 0 ? 'Expires TODAY' : 'EXPIRED')}</span>
+                </div>
+            </div>
+        </div>`;
+        
+        // Insert into container
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        
+        const newToastEl = toastContainer.lastElementChild;
+        const bsToast = new bootstrap.Toast(newToastEl);
+        
+        // Attempt to play sound safely
+        let playPromise = notificationSound.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                // Auto-play was prevented by browser. We silently ignore.
+                console.log("Audio autoplay prevented by browser. Popup will still display.");
+            });
+        }
+        
+        // Show Toast
+        bsToast.show();
+        
+        // Mark as notified in backend via AJAX
+        fetch(`/vehicles/reminders/${reminder.id}/mark/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // When this toast finishes and hides, trigger the next one
+        newToastEl.addEventListener('hidden.bs.toast', function () {
+            newToastEl.remove();
+            processNextReminder();
+        });
+    }
+
+    // Start processing queue after a short delay so the page can load fully
+    setTimeout(processNextReminder, 1000);
+});
+</script>
+{% endif %}
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

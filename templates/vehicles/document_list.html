@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Documents - Vehicle Ledger{% endblock %}
+
+{% block header_title %}Vehicle Documents{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">
+            <i class="bi bi-file-earmark-text text-primary"></i>
+            Vehicle Documents
+        </h1>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'vehicles:document_create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> Add Document
+        </a>
+    </div>
+</div>
+
+<div class="filter-toolbar">
+    <form method="GET" class="filter-form">
+        <div class="filter-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search Vehicle Number" value="{{ search_query }}">
+        </div>
+        <div class="filter-item">
+            <select name="type" class="form-select form-select-sm">
+                <option value="">All Types</option>
+                <option value="Insurance" {% if type_filter == 'Insurance' %}selected{% endif %}>Insurance</option>
+                <option value="RC" {% if type_filter == 'RC' %}selected{% endif %}>RC</option>
+                <option value="FC" {% if type_filter == 'FC' %}selected{% endif %}>FC</option>
+                <option value="Permit" {% if type_filter == 'Permit' %}selected{% endif %}>Permit</option>
+                <option value="PUC" {% if type_filter == 'PUC' %}selected{% endif %}>PUC</option>
+                <option value="Road Tax" {% if type_filter == 'Road Tax' %}selected{% endif %}>Road Tax</option>
+                <option value="National Permit" {% if type_filter == 'National Permit' %}selected{% endif %}>National Permit</option>
+                <option value="Driver Licence" {% if type_filter == 'Driver Licence' %}selected{% endif %}>Driver Licence</option>
+                <option value="Other" {% if type_filter == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Status</option>
+                <option value="VALID" {% if status_filter == 'VALID' %}selected{% endif %}>Valid</option>
+                <option value="EXPIRING SOON" {% if status_filter == 'EXPIRING SOON' %}selected{% endif %}>Expiring Soon</option>
+                <option value="EXPIRED" {% if status_filter == 'EXPIRED' %}selected{% endif %}>Expired</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-funnel me-1"></i> Apply Filter
+            </button>
+            {% if search_query or type_filter or status_filter %}
+            <a href="{% url 'vehicles:document_list' %}" class="btn btn-secondary btn-sm">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="app-card app-card-orders-table shadow-sm mb-5">
+    <div class="app-card-body">
+        <div class="table-responsive">
+            <table class="table app-table-hover table-documents mb-0 text-left">
+                <thead>
+                    <tr>
+                        <th class="cell">Vehicle</th>
+                        <th class="cell">Type</th>
+                        <th class="cell">Doc No.</th>
+                        <th class="cell">Expiry</th>
+                        <th class="cell">Status</th>
+                        <th class="cell text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in page_obj %}
+                    <tr>
+                        <td class="cell"><a href="{% url 'vehicles:detail' doc.vehicle.id %}"><strong>{{ doc.vehicle.vehicle_number }}</strong></a></td>
+                        <td class="cell">{{ doc.get_document_type_display }}</td>
+                        <td class="cell">{{ doc.document_number|default:"-" }}</td>
+                        <td class="cell">
+                            {% if doc.expiry_date %}
+                                <span>{{ doc.expiry_date|date:"d M Y" }}</span>
+                                {% if doc.days_remaining is not None %}
+                                    <br><small class="text-muted">{{ doc.days_remaining }} days left</small>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="cell">
+                            {% if doc.status == 'VALID' %}
+                                <span class="badge bg-success">VALID</span>
+                            {% elif doc.status == 'EXPIRING SOON' %}
+                                <span class="badge bg-warning">EXPIRING SOON</span>
+                            {% elif doc.status == 'EXPIRED' %}
+                                <span class="badge bg-danger">EXPIRED</span>
+                            {% endif %}
+                        </td>
+                        <td class="cell text-end">
+                            <div class="d-flex gap-1 justify-content-end">
+                                <a href="{% url 'vehicles:document_view' doc.id %}" class="btn btn-sm btn-outline-secondary" title="View Document">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'vehicles:document_edit' doc.id %}" class="btn btn-sm btn-outline-primary" title="Edit Document">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Document" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'vehicles:document_delete' doc.id %}" data-delete-name="{{ doc.get_document_type_display }} for {{ doc.vehicle.vehicle_number }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center p-4">No documents found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if page_obj.has_other_pages %}
+    <div class="app-card-footer p-4 mt-auto">
+        <nav class="app-pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+                
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}&q={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">Next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

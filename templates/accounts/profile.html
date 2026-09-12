@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - Vehicle Ledger{% endblock %}
+{% block header_title %}Account Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Account Profile</li>
+            </ol>
+        </nav>
+        <h1 class="page-title"><i class="bi bi-person-circle text-primary"></i> Account Profile</h1>
+        <p class="page-subtitle">Manage your personal credentials, contact information and security</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="app-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-person-lines-fill"></i> Personal Information
+                </div>
+                <div class="card-actions">
+                    <span class="badge-custom badge-primary text-uppercase">{{ profile.role|default:"Manager" }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 pb-4 mb-4 border-bottom">
+                    <div class="user-avatar" style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #6F4E37, #4A2C20); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 700;">
+                        {{ user.username|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-primary-dark">{{ user.get_full_name|default:user.username }}</h4>
+                        <p class="text-muted small mb-0"><i class="bi bi-calendar-event me-1"></i> Member since {{ user.date_joined|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'accounts:profile' %}">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" value="{{ user.get_full_name }}" class="form-control" placeholder="Your full name">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Username</label>
+                            <input type="text" value="{{ user.username }}" class="form-control" disabled readonly>
+                            <div class="form-text">Usernames cannot be modified</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" name="email" value="{{ user.email }}" class="form-control" placeholder="name@company.com">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Mobile Number</label>
+                            <input type="tel" name="mobile_number" value="{{ profile.phone_number|default:'' }}" class="form-control" placeholder="10-digit mobile number">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="bi bi-check2-circle me-1"></i> Save Changes
+                        </button>
+                        <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-key me-1"></i> Change Password
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
