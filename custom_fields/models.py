@@ -1,6 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class CustomFieldDefinition(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='custom_fields')
     TYPE_CHOICES = (
         ('TEXT', 'Text'),
         ('NUMBER', 'Number'),

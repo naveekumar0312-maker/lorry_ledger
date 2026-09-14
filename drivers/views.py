@@ -10,7 +10,7 @@ def driver_list(request):
     search_query = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
     
-    drivers = Driver.objects.all()
+    drivers = Driver.objects.filter(user=request.user)
     if search_query:
         drivers = drivers.filter(full_name__icontains=search_query) | drivers.filter(mobile_number__icontains=search_query) | drivers.filter(license_number__icontains=search_query)
     if status_filter:
@@ -55,7 +55,7 @@ def driver_create(request):
 
 @login_required
 def driver_edit(request, pk):
-    driver = get_object_or_404(Driver, pk=pk)
+    driver = get_object_or_404(Driver, pk=pk, user=request.user)
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '').strip()
         mobile_number = request.POST.get('mobile_number', '').strip()
@@ -80,7 +80,7 @@ def driver_edit(request, pk):
 
 @login_required
 def driver_detail(request, pk):
-    driver = get_object_or_404(Driver, pk=pk)
+    driver = get_object_or_404(Driver, pk=pk, user=request.user)
     primary_trips = driver.primary_trips.select_related('vehicle').order_by('-entry_date', '-id')[:15]
     trip_count = driver.primary_trips.count()
     return render(request, 'drivers/detail.html', {
@@ -92,7 +92,7 @@ def driver_detail(request, pk):
 
 @login_required
 def driver_delete(request, pk):
-    driver = get_object_or_404(Driver, pk=pk)
+    driver = get_object_or_404(Driver, pk=pk, user=request.user)
     if request.method == 'POST':
         trip_count = driver.primary_trips.count() + driver.secondary_trips.count()
         if trip_count > 0:

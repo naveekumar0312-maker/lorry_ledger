@@ -43,7 +43,8 @@ def reports_index(request):
     trips = (
         Trip.objects
         .filter(
-            is_archived=False
+            is_archived=False,
+            created_by=request.user
         )
         .select_related(
             'vehicle',
@@ -543,16 +544,14 @@ def reports_index(request):
     # ============================================================
 
     vehicles = (
-        Vehicle.objects
-        .all()
+        Vehicle.objects.filter(created_by=request.user)
         .order_by(
             'vehicle_number'
         )
     )
 
     drivers = (
-        Driver.objects
-        .all()
+        Driver.objects.filter(user=request.user)
         .order_by(
             'full_name'
         )

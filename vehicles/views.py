@@ -11,7 +11,7 @@ def vehicle_list(request):
     search_query = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
     
-    vehicles = Vehicle.objects.all()
+    vehicles = Vehicle.objects.filter(created_by=request.user)
     if search_query:
         vehicles = vehicles.filter(vehicle_number__icontains=search_query) | vehicles.filter(owner_name__icontains=search_query) | vehicles.filter(model__icontains=search_query)
     if status_filter:
@@ -61,7 +61,7 @@ def vehicle_create(request):
 
 @login_required
 def vehicle_edit(request, pk):
-    vehicle = get_object_or_404(Vehicle, pk=pk)
+    vehicle = get_object_or_404(Vehicle, pk=pk, created_by=request.user)
     if request.method == 'POST':
         vehicle_number = request.POST.get('vehicle_number', '').strip().upper()
         vehicle.vehicle_type = request.POST.get('vehicle_type', 'Lorry').strip()
@@ -87,7 +87,7 @@ def vehicle_edit(request, pk):
 
 @login_required
 def vehicle_detail(request, pk):
-    vehicle = get_object_or_404(Vehicle, pk=pk)
+    vehicle = get_object_or_404(Vehicle, pk=pk, created_by=request.user)
     trips = vehicle.trips.select_related('primary_driver').order_by('-entry_date', '-id')[:20]
     trip_count = vehicle.trips.count()
     documents = vehicle.documents.all()
@@ -101,7 +101,7 @@ def vehicle_detail(request, pk):
 
 @login_required
 def vehicle_delete(request, pk):
-    vehicle = get_object_or_404(Vehicle, pk=pk)
+    vehicle = get_object_or_404(Vehicle, pk=pk, created_by=request.user)
     if request.method == 'POST':
         trip_count = vehicle.trips.count()
         if trip_count > 0:
@@ -165,7 +165,7 @@ def document_list(request):
 
 @login_required
 def document_view(request, pk):
-    doc = get_object_or_404(VehicleDocument, pk=pk)
+    doc = get_object_or_404(VehicleDocument, pk=pk, vehicle__created_by=request.user)
     return render(request, 'vehicles/document_detail.html', {'doc': doc})
 
 @login_required
@@ -187,7 +187,7 @@ def document_create(request):
 
 @login_required
 def document_edit(request, pk):
-    doc = get_object_or_404(VehicleDocument, pk=pk)
+    doc = get_object_or_404(VehicleDocument, pk=pk, vehicle__created_by=request.user)
     if request.method == 'POST':
         form = VehicleDocumentForm(request.POST, request.FILES, instance=doc)
         if form.is_valid():
@@ -201,7 +201,7 @@ def document_edit(request, pk):
 
 @login_required
 def document_delete(request, pk):
-    doc = get_object_or_404(VehicleDocument, pk=pk)
+    doc = get_object_or_404(VehicleDocument, pk=pk, vehicle__created_by=request.user)
     if request.method == 'POST':
         doc.delete()
         messages.success(request, "Vehicle document deleted successfully.")

@@ -1,0 +1,36 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Admin Panel Login - Vehicle Ledger{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h5 class="fw-bold text-primary-dark mb-1">Admin Panel</h5>
+    <p class="text-muted small mb-0">Secure login for administrators only</p>
+</div>
+
+<form method="post" action="{% url 'custom_admin:login' %}">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+        <label class="form-label" for="usernameInput">Username</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" name="username" class="form-control" id="usernameInput" placeholder="Admin username" required autofocus>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0" for="passwordInput">Password</label>
+        </div>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" name="password" class="form-control" id="passwordInput" placeholder="••••••••" required>
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100 py-2 fw-bold mb-3 shadow-sm" type="submit" style="background:#6F4E37;border-color:#6F4E37;">
+        <i class="bi bi-shield-lock me-1"></i> Access Admin Panel
+    </button>
+</form>
+{% endblock %}

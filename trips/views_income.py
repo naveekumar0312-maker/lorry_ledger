@@ -72,7 +72,7 @@ def income_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    vehicles = Vehicle.objects.all()
+    vehicles = Vehicle.objects.filter(created_by=request.user)
     
     context = {
         'page_obj': page_obj,

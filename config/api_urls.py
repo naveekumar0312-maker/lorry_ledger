@@ -9,10 +9,10 @@ from rest_framework_simplejwt.views import (
 from .api_views import VehicleViewSet, DriverViewSet, ExpenseCategoryViewSet, TripViewSet
 
 router = DefaultRouter()
-router.register(r'vehicles', VehicleViewSet)
-router.register(r'drivers', DriverViewSet)
-router.register(r'expense-categories', ExpenseCategoryViewSet)
-router.register(r'trips', TripViewSet)
+router.register(r'vehicles', VehicleViewSet, basename='vehicle')
+router.register(r'drivers', DriverViewSet, basename='driver')
+router.register(r'expense-categories', ExpenseCategoryViewSet, basename='expensecategory')
+router.register(r'trips', TripViewSet, basename='trip')
 
 urlpatterns = [
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

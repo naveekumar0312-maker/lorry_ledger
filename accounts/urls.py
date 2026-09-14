@@ -13,11 +13,8 @@ urlpatterns = [
     # AUTHENTICATION
     # =========================================================
 
-    path(
-        'register/',
-        views.register_view,
-        name='register'
-    ),
+    # Registration is now handled by the custom Admin panel
+    # path('register/', views.register_view, name='register'),
 
     path(
         'login/',

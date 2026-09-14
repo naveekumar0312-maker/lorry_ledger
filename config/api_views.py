@@ -9,21 +9,41 @@ from .api_serializers import (
 )
 
 class VehicleViewSet(viewsets.ModelViewSet):
-    queryset = Vehicle.objects.all()
     serializer_class = VehicleSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Vehicle.objects.filter(created_by=self.request.user)
+        
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 class DriverViewSet(viewsets.ModelViewSet):
-    queryset = Driver.objects.all()
     serializer_class = DriverSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Driver.objects.filter(user=self.request.user)
+        
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class ExpenseCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ExpenseCategory.objects.all()
     serializer_class = ExpenseCategorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return ExpenseCategory.objects.filter(user=self.request.user)
+        
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class TripViewSet(viewsets.ModelViewSet):
-    queryset = Trip.objects.all()
     serializer_class = TripSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Trip.objects.filter(created_by=self.request.user)
+        
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)

@@ -5,9 +5,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 # pyrefly: ignore [missing-import]
 from accounts.views import login_view
-
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', include('custom_admin.urls', namespace='custom_admin')),
     path('', login_view, name='index'),
     path('dashboard/', include('dashboard.urls')),
     path('accounts/', include('accounts.urls')),

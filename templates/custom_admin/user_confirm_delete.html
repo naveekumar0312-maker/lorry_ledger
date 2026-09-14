@@ -1,0 +1,39 @@
+{% extends "custom_admin/base.html" %}
+
+{% block title %}Delete User{% endblock %}
+{% block header_title %}Delete User{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 col-md-8 col-lg-6 mx-auto mt-4">
+        <div class="card border-0 shadow-sm rounded-4 border-top border-danger border-4">
+            <div class="card-body p-4 p-md-5 text-center">
+                <div class="mb-4 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                </div>
+                
+                <h4 class="fw-bold mb-3">Delete User Account</h4>
+                
+                <p class="text-muted mb-4">
+                    Are you sure you want to delete the user account for <strong>{{ user_obj.get_full_name|default:user_obj.username }}</strong> ({{ user_obj.email }})?
+                </p>
+                
+                <div class="alert alert-danger bg-danger-subtle text-danger text-start small mb-4">
+                    <i class="bi bi-info-circle-fill me-2"></i> 
+                    This action cannot be undone. All data associated with this user will be permanently removed.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{% url 'custom_admin:user_list' %}" class="btn btn-light px-4">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="bi bi-trash me-1"></i> Delete User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

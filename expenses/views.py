@@ -9,19 +9,19 @@ def category_list(request):
     if request.method == 'POST':
         category_name = request.POST.get('category_name', '').strip()
         if category_name:
-            category, created = ExpenseCategory.objects.get_or_create(category_name=category_name)
+            category, created = ExpenseCategory.objects.get_or_create(category_name=category_name, user=request.user)
             if created:
                 messages.success(request, f"Category '{category_name}' created.")
             else:
                 messages.warning(request, f"Category '{category_name}' already exists.")
         return redirect('expenses:category_list')
         
-    categories = ExpenseCategory.objects.all()
+    categories = ExpenseCategory.objects.filter(user=request.user)
     return render(request, 'expenses/categories.html', {'categories': categories})
 
 @login_required
 def category_toggle(request, pk):
-    category = get_object_or_404(ExpenseCategory, pk=pk)
+    category = get_object_or_404(ExpenseCategory, pk=pk, user=request.user)
     category.is_active = not category.is_active
     category.save()
     status_str = "activated" if category.is_active else "disabled"
@@ -30,11 +30,11 @@ def category_toggle(request, pk):
 
 @login_required
 def category_edit(request, pk):
-    category = get_object_or_404(ExpenseCategory, pk=pk)
+    category = get_object_or_404(ExpenseCategory, pk=pk, user=request.user)
     if request.method == 'POST':
         new_name = request.POST.get('category_name', '').strip()
         if new_name and new_name != category.category_name:
-            if ExpenseCategory.objects.filter(category_name=new_name).exists():
+            if ExpenseCategory.objects.filter(category_name=new_name, user=request.user).exists():
                 messages.error(request, f"Category '{new_name}' already exists.")
                 return redirect('expenses:category_list')
             category.category_name = new_name
@@ -44,7 +44,7 @@ def category_edit(request, pk):
 
 @login_required
 def category_delete(request, pk):
-    category = get_object_or_404(ExpenseCategory, pk=pk)
+    category = get_object_or_404(ExpenseCategory, pk=pk, user=request.user)
     if request.method == 'POST':
         # Check if any expense entries use this category
         usage_count = TripExpenseEntry.objects.filter(category=category).count()

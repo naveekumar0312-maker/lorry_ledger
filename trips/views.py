@@ -180,12 +180,14 @@ def _validate_vehicle_driver(
         Vehicle,
         pk=vehicle_id,
         status="ACTIVE",
+        created_by=request.user,
     )
 
     primary_driver = get_object_or_404(
         Driver,
         pk=primary_driver_id,
         status="ACTIVE",
+        user=request.user,
     )
 
     secondary_driver = None
@@ -195,6 +197,7 @@ def _validate_vehicle_driver(
             Driver,
             pk=secondary_driver_id,
             status="ACTIVE",
+            user=request.user,
         )
 
     return (
@@ -377,13 +380,15 @@ def trip_list(request):
     # ------------------------------------------------------------
 
     vehicles = Vehicle.objects.filter(
-        status="ACTIVE"
+        status="ACTIVE",
+        created_by=request.user
     ).order_by(
         "vehicle_number"
     )
 
     drivers = Driver.objects.filter(
-        status="ACTIVE"
+        status="ACTIVE",
+        user=request.user
     ).order_by(
         "full_name"
     )
@@ -413,19 +418,22 @@ def trip_list(request):
 def trip_create(request):
 
     vehicles = Vehicle.objects.filter(
-        status="ACTIVE"
+        status="ACTIVE",
+        created_by=request.user
     ).order_by(
         "vehicle_number"
     )
 
     drivers = Driver.objects.filter(
-        status="ACTIVE"
+        status="ACTIVE",
+        user=request.user
     ).order_by(
         "full_name"
     )
 
     expense_categories = ExpenseCategory.objects.filter(
-        is_active=True
+        is_active=True,
+        user=request.user
     ).order_by(
         "category_name"
     )
@@ -649,23 +657,26 @@ def trip_edit(request, pk):
             "secondary_driver",
             "km_detail",
         ),
-        pk=pk,
+        pk=pk, created_by=request.user,
     )
 
     vehicles = Vehicle.objects.filter(
-        status="ACTIVE"
+        status="ACTIVE",
+        created_by=request.user
     ).order_by(
         "vehicle_number"
     )
 
     drivers = Driver.objects.filter(
-        status="ACTIVE"
+        status="ACTIVE",
+        user=request.user
     ).order_by(
         "full_name"
     )
 
     expense_categories = ExpenseCategory.objects.filter(
-        is_active=True
+        is_active=True,
+        user=request.user
     ).order_by(
         "category_name"
     )
@@ -2392,6 +2403,7 @@ def trip_delete(request, pk):
     trip = get_object_or_404(
         Trip,
         pk=pk,
+        created_by=request.user,
     )
 
     if request.method == "POST":
@@ -2447,6 +2459,7 @@ def trip_archive(request, pk):
     trip = get_object_or_404(
         Trip,
         pk=pk,
+        created_by=request.user,
     )
 
     trip.is_archived = not trip.is_archived
@@ -2540,7 +2553,7 @@ def fuel_logbook(request):
 def fuel_edit(request, pk):
     fuel = get_object_or_404(
         TripFuelEntry.objects.select_related('trip'),
-        pk=pk
+        pk=pk, trip__created_by=request.user
     )
 
     if request.method == 'GET':
@@ -2687,7 +2700,7 @@ def load_revenue_edit(request, pk):
 
     entry = get_object_or_404(
         TripLoadRevenueEntry,
-        pk=pk
+        pk=pk, trip__created_by=request.user
     )
 
     trip = entry.trip
@@ -2871,7 +2884,7 @@ def expense_entry_edit(request, pk):
 
     expense = get_object_or_404(
         TripExpenseEntry,
-        pk=pk
+        pk=pk, trip__created_by=request.user
     )
 
     if request.method == "GET":
@@ -3021,7 +3034,7 @@ def rto_pc_edit(request, pk):
 
     entry = get_object_or_404(
         TripRtoPcEntry,
-        pk=pk
+        pk=pk, trip__created_by=request.user
     )
 
     if request.method == "GET":
@@ -3182,6 +3195,7 @@ def vehicle_owner_api(request, pk):
     vehicle = get_object_or_404(
         Vehicle,
         pk=pk,
+        created_by=request.user,
     )
 
     return JsonResponse(
@@ -3206,7 +3220,7 @@ def vehicle_owner_api(request, pk):
 def other_toll_edit(request, pk):
     toll = get_object_or_404(
         TripOtherTollExpense.objects.select_related('trip'),
-        pk=pk
+        pk=pk, trip__created_by=request.user
     )
 
     if request.method == 'GET':
@@ -3303,7 +3317,7 @@ def other_toll_delete(request, pk):
 
     toll = get_object_or_404(
         TripOtherTollExpense,
-        pk=pk
+        pk=pk, trip__created_by=request.user
     )
 
     trip_id = toll.trip_id

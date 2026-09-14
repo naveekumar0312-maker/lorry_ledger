@@ -1,0 +1,74 @@
+{% extends "custom_admin/base.html" %}
+
+{% block title %}Users{% endblock %}
+{% block header_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-primary-dark">System Users</h5>
+        <a href="{% url 'custom_admin:user_create' %}" class="btn btn-primary btn-sm px-3">
+            <i class="bi bi-plus-lg me-1"></i> Add User
+        </a>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Mobile</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center me-3 text-white" style="width:40px;height:40px;background:#6F4E37;">
+                                    {{ u.first_name|default:u.username|make_list|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ u.get_full_name|default:u.username }}</div>
+                                    <div class="small text-muted">Joined {{ u.date_joined|date:"M d, Y" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            {% if u.is_superuser %}
+                                <span class="badge bg-danger">Superadmin</span>
+                            {% elif u.profile %}
+                                <span class="badge bg-primary">{{ u.profile.get_role_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.profile.phone_number|default:"-" }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'custom_admin:user_detail' u.id %}" class="btn btn-sm btn-light text-primary me-1" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'custom_admin:user_edit' u.id %}" class="btn btn-sm btn-light text-warning me-1" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'custom_admin:user_delete' u.id %}" class="btn btn-sm btn-light text-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

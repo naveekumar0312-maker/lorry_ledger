@@ -26,7 +26,7 @@ class DashboardView(View):
 
         trips = (
             Trip.objects
-            .filter(is_archived=False)
+            .filter(is_archived=False, created_by=request.user)
             .select_related(
                 'vehicle',
                 'primary_driver',
@@ -55,13 +55,13 @@ class DashboardView(View):
 
         total_vehicles = (
             Vehicle.objects
-            .filter(status='ACTIVE')
+            .filter(status='ACTIVE', created_by=request.user)
             .count()
         )
 
         total_drivers = (
             Driver.objects
-            .filter(status='ACTIVE')
+            .filter(status='ACTIVE', user=request.user)
             .count()
         )
 
@@ -723,12 +723,13 @@ class DashboardView(View):
         
         document_alerts = VehicleDocument.objects.filter(
             is_active=True,
-            expiry_date__lte=thirty_days
+            expiry_date__lte=thirty_days,
+            vehicle__created_by=request.user
         ).select_related('vehicle').order_by('expiry_date')
         
         expired_count = 0
         expiring_soon_count = 0
-        valid_count = VehicleDocument.objects.filter(is_active=True).count()
+        valid_count = VehicleDocument.objects.filter(is_active=True, vehicle__created_by=request.user).count()
         
         alert_docs = []
         for doc in document_alerts:
