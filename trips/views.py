@@ -293,6 +293,7 @@ def trip_list(request):
 
     trips = (
         Trip.objects
+        .filter(created_by=request.user)
         .select_related(
             "vehicle",
             "primary_driver",
@@ -525,7 +526,7 @@ def trip_create(request):
                         _generate_trip_reference()
                     )
 
-                elif Trip.objects.filter(
+                elif Trip.objects.filter(created_by=request.user,
                     trip_ref_no=trip_ref_no
                 ).exists():
                     raise ValueError(
@@ -2516,6 +2517,7 @@ def fuel_logbook(request):
 
     fuel_entries = (
         TripFuelEntry.objects
+        .filter(trip__created_by=request.user)
         .select_related(
             "trip",
             "trip__vehicle",

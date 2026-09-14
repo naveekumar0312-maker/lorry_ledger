@@ -95,7 +95,7 @@ def income_list(request):
 
 @login_required
 def income_create(request):
-    trips = Trip.objects.filter(is_archived=False).order_by('-entry_date')
+    trips = Trip.objects.filter(is_archived=False, created_by=request.user).order_by('-entry_date')
     
     if request.method == 'POST':
         trip_id = request.POST.get('trip_id')
@@ -142,7 +142,7 @@ def income_create(request):
 @login_required
 def income_edit(request, pk):
     entry = get_object_or_404(TripIncomeEntry, pk=pk)
-    trips = Trip.objects.filter(is_archived=False).order_by('-entry_date')
+    trips = Trip.objects.filter(is_archived=False, created_by=request.user).order_by('-entry_date')
     
     if request.method == 'POST':
         trip_id = request.POST.get('trip_id')

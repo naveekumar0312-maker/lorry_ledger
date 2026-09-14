@@ -8,7 +8,7 @@ def unshown_reminders(request):
     if not request.user.is_authenticated:
         return {}
         
-    reminders_qs = VehicleDocumentReminder.objects.filter(
+    reminders_qs = VehicleDocumentReminder.objects.filter(document__vehicle__created_by=request.user, 
         is_notified=False
     ).select_related('document__vehicle')[:5]
     

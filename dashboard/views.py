@@ -493,7 +493,8 @@ class DashboardView(View):
         expenses_by_cat = (
             TripExpenseEntry.objects
             .filter(
-                trip__is_archived=False
+                trip__is_archived=False,
+                trip__created_by=request.user
             )
             .values(
                 'category__category_name'
@@ -514,7 +515,8 @@ class DashboardView(View):
         vehicle_summary = (
             Trip.objects
             .filter(
-                is_archived=False
+                is_archived=False,
+                created_by=request.user
             )
             .values(
                 'vehicle__vehicle_number'
@@ -535,7 +537,8 @@ class DashboardView(View):
         driver_summary = (
             Trip.objects
             .filter(
-                is_archived=False
+                is_archived=False,
+                created_by=request.user
             )
             .values(
                 'primary_driver__full_name'
@@ -556,7 +559,8 @@ class DashboardView(View):
         recent_expenses = (
             TripExpenseEntry.objects
             .filter(
-                trip__is_archived=False
+                trip__is_archived=False,
+                trip__created_by=request.user
             )
             .select_related(
                 'trip',

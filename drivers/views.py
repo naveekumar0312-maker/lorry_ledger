@@ -36,7 +36,7 @@ def driver_create(request):
         status = request.POST.get('status', 'ACTIVE')
         notes = request.POST.get('notes', '').strip()
         
-        if Driver.objects.filter(mobile_number=mobile_number).exists():
+        if Driver.objects.filter(mobile_number=mobile_number, user=request.user).exists():
             messages.error(request, f"Driver with mobile number '{mobile_number}' already exists.")
             return render(request, 'drivers/form.html', {'post_data': request.POST})
             

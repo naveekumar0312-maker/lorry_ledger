@@ -19,3 +19,11 @@ class VehicleDocumentForm(forms.ModelForm):
             'document_file': forms.FileInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'})
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super(VehicleDocumentForm, self).__init__(*args, **kwargs)
+        if user:
+            self.fields['vehicle'].queryset = Vehicle.objects.filter(created_by=user)
+        else:
+            self.fields['vehicle'].queryset = Vehicle.objects.none()

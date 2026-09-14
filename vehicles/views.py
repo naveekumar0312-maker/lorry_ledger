@@ -39,7 +39,7 @@ def vehicle_create(request):
         status = request.POST.get('status', 'ACTIVE')
         notes = request.POST.get('notes', '').strip()
         
-        if Vehicle.objects.filter(vehicle_number=vehicle_number).exists():
+        if Vehicle.objects.filter(vehicle_number=vehicle_number, created_by=request.user).exists():
             messages.error(request, f"Vehicle with registration number '{vehicle_number}' already exists.")
             return render(request, 'vehicles/form.html', {'post_data': request.POST})
             
@@ -133,7 +133,7 @@ def document_list(request):
     status_filter = request.GET.get('status', '').strip()
     type_filter = request.GET.get('type', '').strip()
 
-    docs = VehicleDocument.objects.select_related('vehicle').all()
+    docs = VehicleDocument.objects.select_related('vehicle').filter(vehicle__created_by=request.user)
 
     if search_query:
         docs = docs.filter(vehicle__vehicle_number__icontains=search_query) | docs.filter(document_number__icontains=search_query)
@@ -171,7 +171,7 @@ def document_view(request, pk):
 @login_required
 def document_create(request):
     if request.method == 'POST':
-        form = VehicleDocumentForm(request.POST, request.FILES)
+        form = VehicleDocumentForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             doc = form.save()
             messages.success(request, f"Document '{doc.get_document_type_display()}' for {doc.vehicle.vehicle_number} added.")
@@ -181,7 +181,7 @@ def document_create(request):
         vehicle_id = request.GET.get('vehicle')
         if vehicle_id:
             initial['vehicle'] = vehicle_id
-        form = VehicleDocumentForm(initial=initial)
+        form = VehicleDocumentForm(initial=initial, user=request.user)
 
     return render(request, 'vehicles/document_form.html', {'form': form, 'title': 'Add Vehicle Document'})
 
@@ -189,13 +189,13 @@ def document_create(request):
 def document_edit(request, pk):
     doc = get_object_or_404(VehicleDocument, pk=pk, vehicle__created_by=request.user)
     if request.method == 'POST':
-        form = VehicleDocumentForm(request.POST, request.FILES, instance=doc)
+        form = VehicleDocumentForm(request.POST, request.FILES, instance=doc, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, f"Vehicle document updated successfully.")
             return redirect('vehicles:document_list')
     else:
-        form = VehicleDocumentForm(instance=doc)
+        form = VehicleDocumentForm(instance=doc, user=request.user)
 
     return render(request, 'vehicles/document_form.html', {'form': form, 'title': 'Edit Vehicle Document', 'doc': doc})
 
@@ -213,7 +213,7 @@ def mark_reminder_notified(request, pk):
     if request.method == 'POST':
         try:
             from vehicles.models import VehicleDocumentReminder
-            reminder = VehicleDocumentReminder.objects.get(pk=pk)
+            reminder = VehicleDocumentReminder.objects.get(pk=pk, document__vehicle__created_by=request.user)
             reminder.is_notified = True
             reminder.save()
             return JsonResponse({'status': 'ok'})

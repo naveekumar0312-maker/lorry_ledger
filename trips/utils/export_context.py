@@ -127,7 +127,7 @@ def build_reports_context(request):
     from_date = request.GET.get('from_date', '').strip()
     to_date = request.GET.get('to_date', '').strip()
 
-    trips = Trip.objects.filter(is_archived=False).select_related(
+    trips = Trip.objects.filter(is_archived=False, created_by=request.user).select_related(
         'vehicle', 'primary_driver', 'secondary_driver', 'km_detail'
     ).prefetch_related(
         'fuel_entries', 'load_revenue_entries', 'expense_entries',
